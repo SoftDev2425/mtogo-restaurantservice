@@ -13,15 +13,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       String  @id @default(uuid())
-  email    String  @unique
-  name     String?
-  password String?
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  sortOrder Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Menu      Menu[]
 }
 
-model TestTable {
-  id    String  @id @default(uuid())
-  name  String?
-  email String?
+model Menu {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  sortOrder   Int      @unique
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String
 }
