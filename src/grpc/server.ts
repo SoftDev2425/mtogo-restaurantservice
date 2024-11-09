@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import path from 'path';
@@ -6,8 +7,11 @@ import { restaurantServiceImpl } from './restaurantServiceImp';
 // Load the .proto file
 const PROTO_PATH = path.resolve(
   __dirname,
-  'node_modules/shared-protos/menu.proto',
+  '../../node_modules/mtogo-proto-provider/protos/restaurant.proto',
 );
+
+console.log(PROTO_PATH);
+
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -15,8 +19,9 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   defaults: true,
   oneofs: true,
 });
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const restaurantProto = grpc.loadPackageDefinition(packageDefinition) as any;
+
+const restaurantProto = grpc.loadPackageDefinition(packageDefinition)
+  .restaurant as any;
 
 const server = new grpc.Server();
 server.addService(
@@ -25,6 +30,7 @@ server.addService(
 );
 
 const PORT = 50051;
+
 server.bindAsync(
   `0.0.0.0:${PORT}`,
   grpc.ServerCredentials.createInsecure(),

@@ -34,6 +34,7 @@ export const restaurantServiceImpl = {
       callback(error, null);
     }
   },
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deleteCategory: async (call: any, callback: any) => {
     try {
@@ -44,6 +45,7 @@ export const restaurantServiceImpl = {
       callback(error, null);
     }
   },
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getMenu: async (call: any, callback: any) => {
     try {
@@ -54,6 +56,7 @@ export const restaurantServiceImpl = {
       callback(error, null);
     }
   },
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateMenu: async (call: any, callback: any) => {
     try {
