@@ -1,4 +1,5 @@
 import { Express, Request, Response } from 'express';
+import RestaurantRouter from './routes/restaurant.routes';
 
 function routes(app: Express) {
   app.get('/', (_req: Request, res: Response) =>
@@ -8,6 +9,8 @@ function routes(app: Express) {
   app.get('/healthcheck', (_req: Request, res: Response) =>
     res.sendStatus(200),
   );
+
+  app.get('/api/restaurants', RestaurantRouter);
 
   // Catch unregistered routes
   app.all('*', (req: Request, res: Response) => {
