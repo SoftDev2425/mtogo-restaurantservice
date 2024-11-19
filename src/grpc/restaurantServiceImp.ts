@@ -6,9 +6,14 @@ export const restaurantServiceImpl = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createCategory: async (call: any, callback: any) => {
     try {
-      const { name, sortOrder } = call.request;
-      const category = await prisma.category.create({
-        data: { name, sortOrder },
+      const { title, description } = call.request;
+      const category = await prisma.categories.create({
+        data: {
+          title,
+          description,
+          sortOrder: 0,
+          restaurantId: call.metadata.get('restaurant_id'), // ?????
+        },
       });
       // Produce an event to Kafka
       await producer.send({
@@ -24,11 +29,12 @@ export const restaurantServiceImpl = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateCategory: async (call: any, callback: any) => {
     try {
-      const { id, name, sortOrder } = call.request;
-      const category = await prisma.category.update({
+      const { id, title, description, sortOrder } = call.request;
+      const category = await prisma.categories.update({
         where: { id },
-        data: { name, sortOrder },
+        data: { title, description, sortOrder },
       });
+
       callback(null, category);
     } catch (error) {
       callback(error, null);
@@ -39,7 +45,7 @@ export const restaurantServiceImpl = {
   deleteCategory: async (call: any, callback: any) => {
     try {
       const { id } = call.request;
-      await prisma.category.delete({ where: { id } });
+      await prisma.categories.delete({ where: { id } });
       callback(null, { success: true });
     } catch (error) {
       callback(error, null);
@@ -50,7 +56,7 @@ export const restaurantServiceImpl = {
   getMenu: async (call: any, callback: any) => {
     try {
       const { id } = call.request;
-      const menu = await prisma.menu.findUnique({ where: { id } });
+      const menu = await prisma.menus.findUnique({ where: { id } });
       callback(null, menu);
     } catch (error) {
       callback(error, null);
@@ -61,7 +67,10 @@ export const restaurantServiceImpl = {
   updateMenu: async (call: any, callback: any) => {
     try {
       const { id, title } = call.request;
-      const menu = await prisma.menu.update({ where: { id }, data: { title } });
+      const menu = await prisma.menus.update({
+        where: { id },
+        data: { title },
+      });
       callback(null, menu);
     } catch (error) {
       callback(error, null);
