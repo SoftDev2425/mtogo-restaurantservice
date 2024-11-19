@@ -13,21 +13,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Category {
-  id        String   @id @default(cuid())
-  name      String
-  sortOrder Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Menu      Menu[]
+model Categories {
+  id          String   @id @default(cuid())
+  title       String   @unique @db.VarChar(255)
+  description String?  @db.VarChar(255)
+  sortOrder   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  menus       Menus[]
+
+  restaurantId String
+
+  @@index([restaurantId], name: "restaurant_id_index_category")
+  @@index([title], name: "title_index")
+  @@index([sortOrder], name: "sort_order_index")
 }
 
-model Menu {
-  id          String   @id @default(cuid())
-  title       String
-  description String
+model Menus {
+  id          String     @id @default(cuid())
+  title       String     @unique @db.VarChar(255)
   price       Float
-  sortOrder   Int      @unique
-  category    Category @relation(fields: [categoryId], references: [id])
+  description String?    @db.VarChar(255)
+  sortOrder   Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  category    Categories @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId  String
+
+  @@index([categoryId], name: "category_id_index")
+  @@index([price], name: "price_index")
+  @@index([sortOrder], name: "sort_order_index_menu")
 }

@@ -10,8 +10,6 @@ const PROTO_PATH = path.resolve(
   '../../node_modules/mtogo-proto-provider/protos/restaurant.proto',
 );
 
-console.log(PROTO_PATH);
-
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -24,6 +22,7 @@ const restaurantProto = grpc.loadPackageDefinition(packageDefinition)
   .restaurant as any;
 
 const server = new grpc.Server();
+
 server.addService(
   restaurantProto.RestaurantService.service,
   restaurantServiceImpl,
