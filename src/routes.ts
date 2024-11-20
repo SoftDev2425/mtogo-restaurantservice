@@ -11,7 +11,7 @@ function routes(app: Express) {
     res.sendStatus(200),
   );
 
-  app.get('/api/restaurants', RestaurantRouter);
+  app.use('/api/restaurants', RestaurantRouter);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {

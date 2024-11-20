@@ -4,6 +4,8 @@ import express from 'express';
 
 const router = express.Router();
 
+router.get('/', (_req, res) => res.sendStatus(200));
+
 // Create Category: POST /restaurant/categories
 router.post(
   '/categories',
@@ -55,7 +57,7 @@ router.delete(
 
 // Get categories by restaurant id: GET /restaurant/categories/:restaurantId
 router.get(
-  '/categories/:restaurantId',
+  '/:restaurantId/categories',
   requireRoles(['restaurant', 'customer']),
   restaurantController.handleGetCategoriesByRestaurantId,
 );
