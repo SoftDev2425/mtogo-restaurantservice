@@ -333,6 +333,7 @@ async function getCategoriesByRestaurantId(restaurantId: string) {
       id: true,
       title: true,
       description: true,
+      restaurantId: true,
       sortOrder: true,
       createdAt: true,
       menus: true,
@@ -387,6 +388,40 @@ async function getMenuById(menuId: string) {
   });
 }
 
+async function getRestaurantDetailsByRestaurantId(restaurantId: string) {
+  const restaurantData = await fetch(
+    `${process.env.AUTH_SERVICE_URL}/api/restaurants/${restaurantId}`,
+  );
+
+  const restaurant = (await restaurantData.json()) as {
+    restaurant: {
+      id: string;
+      name: string;
+      email: string;
+      phone: string;
+      createdAt: Date;
+      address: {
+        street: string;
+        city: string;
+        state: string;
+        zip: string;
+      };
+    };
+  };
+
+  const categories = await getCategoriesByRestaurantId(restaurantId);
+
+  return {
+    id: restaurant.restaurant.id,
+    name: restaurant.restaurant.name,
+    email: restaurant.restaurant.email,
+    phone: restaurant.restaurant.phone,
+    createdAt: restaurant.restaurant.createdAt,
+    address: restaurant.restaurant.address,
+    categories,
+  };
+}
+
 export {
   createCategory,
   updateCategory,
@@ -395,7 +430,7 @@ export {
   getMenusByCategoryId,
   updateMenu,
   deleteMenu,
-  // getRestaurantDetailsByRestaurantId,
+  getRestaurantDetailsByRestaurantId,
   getCategoriesByRestaurantId,
   getMenuById,
 };

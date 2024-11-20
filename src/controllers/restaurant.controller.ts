@@ -10,6 +10,7 @@ import {
   getCategoriesByRestaurantId,
   getMenuById,
   getMenusByCategoryId,
+  getRestaurantDetailsByRestaurantId,
   // getRestaurantDetailsByRestaurantId,
   updateCategory,
   updateMenu,
@@ -332,6 +333,29 @@ async function handleGetMenuById(req: CustomRequest, res: Response) {
   }
 }
 
+async function handleGetRestaurantDetailsByRestaurantId(
+  req: CustomRequest,
+  res: Response,
+) {
+  try {
+    // Get restaurant details
+    const restaurantId = req.params.restaurantId;
+
+    // Return restaurant details
+    const restaurant = await getRestaurantDetailsByRestaurantId(restaurantId);
+
+    return res.status(200).json({
+      restaurant,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
 export default {
   handleCreateCategory,
   handleUpdateCategory,
@@ -342,6 +366,6 @@ export default {
   handleGetCategoriesByRestaurantId,
   handleDeleteMenu,
   // handleGetNearbyRestaurants,
-  // handleGetRestaurantDetailsByRestaurantId,
+  handleGetRestaurantDetailsByRestaurantId,
   handleGetMenuById,
 };
