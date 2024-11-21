@@ -12,7 +12,6 @@ export const requireRoles = (allowedRoles: string[]) => {
   };
 };
 
-// Example: Middleware for validating different roles
 export const requireCustomer = requireRoles(['customer']);
 export const requireRestaurant = requireRoles(['restaurant']);
 export const requireAdmin = requireRoles(['admin']);
