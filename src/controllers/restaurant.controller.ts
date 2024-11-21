@@ -123,20 +123,18 @@ async function handleDeleteCategory(req: CustomRequest, res: Response) {
 async function handleCreateMenu(req: CustomRequest, res: Response) {
   try {
     const { categoryId } = req.params;
-    const { title, description, price, sortOrder } = req.body;
+    const { title, description, price } = req.body;
 
     createMenuSchema.parse({
       title,
       description,
       price,
-      sortOrder,
     });
 
     const menu = await createMenu(
       title,
       description,
       price,
-      sortOrder,
       categoryId,
       req.userId as string,
     );
