@@ -34,7 +34,7 @@ async function handleCreateCategory(req: CustomRequest, res: Response) {
       req.userId as string,
     );
 
-    return res.status(200).json({
+    return res.status(201).json({
       message: 'Category created successfully',
       category: {
         id: category.id,

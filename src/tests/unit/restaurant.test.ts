@@ -5,6 +5,8 @@ import {
   createMenu,
   deleteCategory,
   deleteMenu,
+  getCategoriesByRestaurantId,
+  getMenusByCategoryId,
   updateCategory,
   updateMenu,
 } from '../../services/restaurant.service';
@@ -971,10 +973,180 @@ describe('deleteMenu', () => {
       where: { id: 'menu1' },
     });
   });
+
+  it('should throw an error when the menu is not found', async () => {
+    prisma.menus.findUnique = jest.fn().mockResolvedValue(null);
+
+    await expect(deleteMenu('menu1', 'restaurant1')).rejects.toThrow(
+      'Menu not found.',
+    );
+
+    expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw an error when the category does not belong to the restaurant', async () => {
+    prisma.menus.findUnique = jest.fn().mockResolvedValue({
+      id: 'menu1',
+      category: {
+        id: 'category1',
+        restaurantId: 'restaurant2',
+      },
+    });
+
+    await expect(deleteMenu('menu1', 'restaurant1')).rejects.toThrow(
+      'Menu not found.',
+    );
+
+    expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw an error when an unknown error occurs', async () => {
+    prisma.menus.findUnique = jest.fn().mockRejectedValue(new Error('Unknown'));
+
+    await expect(deleteMenu('menu1', 'restaurant1')).rejects.toThrow('Unknown');
+
+    expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
+  });
 });
 
-describe('getMenusByCategoryId', () => {});
+describe('getMenusByCategoryId', () => {
+  it('should return an array of menus when they exist', async () => {
+    const mockMenus = [
+      {
+        id: 'menu1',
+        title: 'Menu 1',
+        description: 'Description 1',
+        price: 100,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'menu2',
+        title: 'Menu 2',
+        description: 'Description 2',
+        price: 200,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
 
-describe('getCategoriesByRestaurantId', () => {});
+    prisma.menus.findMany = jest.fn().mockResolvedValue(mockMenus);
+
+    const menus = await getMenusByCategoryId('category1');
+
+    expect(menus).toEqual(mockMenus);
+    expect(prisma.menus.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.menus.findMany).toHaveBeenCalledWith({
+      where: { categoryId: 'category1' },
+    });
+  });
+
+  it('should return an empty array when no menus exist', async () => {
+    prisma.menus.findMany = jest.fn().mockResolvedValue([]);
+
+    const menus = await getMenusByCategoryId('category1');
+
+    expect(menus).toEqual([]);
+    expect(prisma.menus.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.menus.findMany).toHaveBeenCalledWith({
+      where: { categoryId: 'category1' },
+    });
+  });
+
+  it('should throw an error when an unknown error occurs', async () => {
+    prisma.menus.findMany = jest.fn().mockRejectedValue(new Error('Unknown'));
+
+    await expect(getMenusByCategoryId('category1')).rejects.toThrow('Unknown');
+
+    expect(prisma.menus.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw an error when the category is not found', async () => {
+    prisma.menus.findMany = jest.fn().mockRejectedValue(new Error('Unknown'));
+
+    await expect(getMenusByCategoryId('category1')).rejects.toThrow('Unknown');
+
+    expect(prisma.menus.findMany).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('getCategoriesByRestaurantId', () => {
+  it('should return an array of categories when they exist', async () => {
+    const mockCategories = [
+      {
+        id: 'category1',
+        title: 'Category 1',
+        description: 'Description 1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'category2',
+        title: 'Category 2',
+        description: 'Description 2',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    prisma.categories.findMany = jest.fn().mockResolvedValue(mockCategories);
+
+    const categories = await getCategoriesByRestaurantId('restaurant1');
+
+    expect(categories).toEqual(mockCategories);
+    expect(prisma.categories.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.categories.findMany).toHaveBeenCalledWith({
+      where: { restaurantId: 'restaurant1' },
+      orderBy: {
+        sortOrder: 'asc',
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        restaurantId: true,
+        sortOrder: true,
+        createdAt: true,
+        menus: true,
+      },
+    });
+  });
+
+  it('should return an empty array when no categories exist', async () => {
+    prisma.categories.findMany = jest.fn().mockResolvedValue([]);
+
+    const categories = await getCategoriesByRestaurantId('restaurant1');
+
+    expect(categories).toEqual([]);
+    expect(prisma.categories.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.categories.findMany).toHaveBeenCalledWith({
+      where: { restaurantId: 'restaurant1' },
+      orderBy: {
+        sortOrder: 'asc',
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        restaurantId: true,
+        sortOrder: true,
+        createdAt: true,
+        menus: true,
+      },
+    });
+  });
+
+  it('should throw an error when an unknown error occurs', async () => {
+    prisma.categories.findMany = jest
+      .fn()
+      .mockRejectedValue(new Error('Unknown'));
+
+    await expect(getCategoriesByRestaurantId('restaurant1')).rejects.toThrow(
+      'Unknown',
+    );
+
+    expect(prisma.categories.findMany).toHaveBeenCalledTimes(1);
+  });
+});
 
 // describe('getNearbyRestaurants', () => {});
