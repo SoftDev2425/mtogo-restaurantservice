@@ -34,7 +34,6 @@ model Menus {
   title       String     @unique @db.VarChar(255)
   price       Float
   description String?    @db.VarChar(255)
-  sortOrder   Int
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   category    Categories @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -42,5 +41,4 @@ model Menus {
 
   @@index([categoryId], name: "category_id_index")
   @@index([price], name: "price_index")
-  @@index([sortOrder], name: "sort_order_index_menu")
 }

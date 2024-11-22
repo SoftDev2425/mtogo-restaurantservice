@@ -181,27 +181,15 @@ async function createMenu(
       },
     });
 
-    console.log(category);
-
     if (!category || category.restaurantId !== restaurantId) {
       throw new Error('Category not found');
     }
-
-    console.log('category found');
-    console.log(category.restaurantId, restaurantId);
-
-    const menusCount = await prisma.menus.count({
-      where: {
-        categoryId,
-      },
-    });
 
     return await prisma.menus.create({
       data: {
         title,
         description,
         price,
-        sortOrder: menusCount,
         category: {
           connect: {
             id: categoryId,
@@ -222,23 +210,11 @@ async function createMenu(
   }
 }
 
-async function getMenusByCategoryId(categoryId: string) {
-  return await prisma.menus.findMany({
-    where: {
-      categoryId,
-    },
-    orderBy: {
-      sortOrder: 'asc',
-    },
-  });
-}
-
 async function updateMenu(
   menuId: string,
   title: string,
   description: string,
   price: number,
-  sortOrder: number,
   restaurantId: string,
 ) {
   try {
@@ -248,7 +224,6 @@ async function updateMenu(
         id: menuId,
       },
       select: {
-        sortOrder: true,
         category: {
           select: {
             id: true,
@@ -259,22 +234,7 @@ async function updateMenu(
     });
 
     if (!menu || menu.category.restaurantId !== restaurantId) {
-      throw new Error('Menu not found');
-    }
-
-    if (sortOrder !== menu.sortOrder) {
-      const menus = await prisma.menus.findMany({
-        where: {
-          categoryId: menu.category.id,
-        },
-        orderBy: {
-          sortOrder: 'desc',
-        },
-      });
-
-      if (sortOrder < 0 || sortOrder > menus.length - 1) {
-        throw new Error('Invalid sortOrder');
-      }
+      throw new Error('Menu not found.');
     }
 
     return await prisma.menus.update({
@@ -285,7 +245,14 @@ async function updateMenu(
         title,
         description,
         price,
-        sortOrder,
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
   } catch (error) {
@@ -294,7 +261,7 @@ async function updateMenu(
         error.code === 'P2002' &&
         (error.meta?.target as string[])?.includes('title')
       ) {
-        throw new Error('A menu with this title already exists');
+        throw new Error('A menu with this title already exists.');
       }
     }
     throw error;
@@ -302,26 +269,41 @@ async function updateMenu(
 }
 
 async function deleteMenu(menuId: string, restaurantId: string) {
-  const menu = await prisma.menus.findUnique({
-    where: {
-      id: menuId,
-    },
-    select: {
-      category: {
-        select: {
-          restaurantId: true,
+  try {
+    const menu = await prisma.menus.findUnique({
+      where: {
+        id: menuId,
+      },
+      select: {
+        category: {
+          select: {
+            id: true,
+            restaurantId: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!menu || menu.category.restaurantId !== restaurantId) {
-    throw new Error('Menu not found');
+    if (!menu || menu.category.restaurantId !== restaurantId) {
+      throw new Error('Menu not found.');
+    }
+
+    // Delete the menu
+    await prisma.menus.delete({
+      where: {
+        id: menuId,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    throw error;
   }
+}
 
-  await prisma.menus.delete({
+async function getMenusByCategoryId(categoryId: string) {
+  return await prisma.menus.findMany({
     where: {
-      id: menuId,
+      categoryId,
     },
   });
 }

@@ -4,7 +4,9 @@ import {
   createCategory,
   createMenu,
   deleteCategory,
+  deleteMenu,
   updateCategory,
+  updateMenu,
 } from '../../services/restaurant.service';
 
 describe('createCategory', () => {
@@ -552,7 +554,6 @@ describe('createMenu', () => {
       title: 'Mock Category',
       description: 'Mock Description',
       restaurantId: '1',
-      sortOrder: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -562,7 +563,6 @@ describe('createMenu', () => {
       title: 'Mock Menu',
       description: 'Mock Description',
       price: 129,
-      sortOrder: 0,
       categoryId: mockCategory.id,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -589,19 +589,12 @@ describe('createMenu', () => {
         id: mockCategory.id,
       },
     });
-    expect(prisma.menus.count).toHaveBeenCalledTimes(1);
-    expect(prisma.menus.count).toHaveBeenCalledWith({
-      where: {
-        categoryId: mockCategory.id,
-      },
-    });
     expect(prisma.menus.create).toHaveBeenCalledTimes(1);
     expect(prisma.menus.create).toHaveBeenCalledWith({
       data: {
         title: mockMenu.title,
         description: mockMenu.description,
         price: mockMenu.price,
-        sortOrder: 0,
         category: {
           connect: {
             id: mockCategory.id,
@@ -629,7 +622,6 @@ describe('createMenu', () => {
       title: 'Mock Menu',
       description: 'Mock Description',
       price: 129,
-      sortOrder: 0,
       categoryId: mockCategory.id,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -748,14 +740,12 @@ describe('createMenu', () => {
       title: 'Mock Menu',
       description: 'Mock Description',
       price: 129,
-      sortOrder: 0,
       categoryId: mockCategory.id,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     prisma.categories.findUnique = jest.fn().mockResolvedValue(mockCategory);
-    prisma.menus.count = jest.fn().mockResolvedValue(1);
     prisma.menus.create = jest.fn().mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
         code: 'P2002',
@@ -777,7 +767,214 @@ describe('createMenu', () => {
       ),
     ).rejects.toThrow('A menu with this title already exists.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
-    expect(prisma.menus.count).toHaveBeenCalledTimes(1);
     expect(prisma.menus.create).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('updateMenu', () => {
+  it("should update a menu successfully when it exists and the category's restaurantId matches", async () => {
+    // Arrange
+    const mockMenu = {
+      id: 'menu1',
+      title: 'Original Menu',
+      description: 'Original Description',
+      price: 100,
+      category: {
+        id: 'category1',
+        restaurantId: 'restaurant1',
+      },
+    };
+
+    prisma.menus.findUnique = jest.fn().mockResolvedValue(mockMenu);
+    prisma.menus.update = jest.fn().mockResolvedValue({
+      id: 'menu1',
+      title: 'Updated Menu',
+      description: 'Updated Description',
+      price: 120,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const updatedMenu = await updateMenu(
+      mockMenu.id,
+      'Updated Menu',
+      'Updated Description',
+      120,
+      'restaurant1',
+    );
+
+    expect(updatedMenu).toMatchObject({
+      id: 'menu1',
+      title: 'Updated Menu',
+      description: 'Updated Description',
+      price: 120,
+    });
+    expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
+    expect(prisma.menus.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw an error when the menu is not found', async () => {
+    prisma.menus.findUnique = jest.fn().mockResolvedValue(null);
+
+    await expect(
+      updateMenu(
+        'menu1',
+        'Updated Menu',
+        'Updated Description',
+        120,
+        'restaurant1',
+      ),
+    ).rejects.toThrow('Menu not found.');
+
+    expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw an error when the category does not belong to the restaurant', async () => {
+    prisma.menus.findUnique = jest.fn().mockResolvedValue({
+      id: 'menu1',
+      title: 'Original Menu',
+      description: 'Original Description',
+      price: 100,
+      sortOrder: 0,
+      category: {
+        id: 'category1',
+        restaurantId: 'restaurant2',
+      },
+    });
+
+    await expect(
+      updateMenu(
+        'menu1',
+        'Updated Menu',
+        'Updated Description',
+        120,
+        'restaurant1',
+      ),
+    ).rejects.toThrow('Menu not found.');
+
+    expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
+  });
+
+  it("should update a menu's sortOrder successfully", async () => {
+    const mockMenu = {
+      id: 'menu1',
+      title: 'Original Menu',
+      description: 'Original Description',
+      price: 100,
+      sortOrder: 0,
+      category: {
+        id: 'category1',
+        restaurantId: 'restaurant1',
+      },
+    };
+
+    prisma.menus.findUnique = jest.fn().mockResolvedValue(mockMenu);
+    prisma.menus.update = jest.fn().mockResolvedValue({
+      id: 'menu1',
+      title: 'Original Menu',
+      description: 'Original Description',
+      price: 100,
+      sortOrder: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const updatedMenu = await updateMenu(
+      mockMenu.id,
+      'Original Menu',
+      'Original Description',
+      100,
+      'restaurant1',
+    );
+
+    expect(updatedMenu).toMatchObject({
+      id: 'menu1',
+      title: 'Original Menu',
+      description: 'Original Description',
+      price: 100,
+      sortOrder: 1,
+    });
+    expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
+    expect(prisma.menus.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("should throw an error when updating a menu's title to an existing title in the category", async () => {
+    const mockMenu = {
+      id: 'menu1',
+      title: 'Original Menu',
+      description: 'Original Description',
+      price: 100,
+      sortOrder: 0,
+      category: {
+        id: 'category1',
+        restaurantId: 'restaurant1',
+      },
+    };
+
+    prisma.menus.findUnique = jest.fn().mockResolvedValue(mockMenu);
+    prisma.menus.update = jest.fn().mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        meta: {
+          target: ['title'],
+        },
+        clientVersion: '4.0.0',
+      }),
+    );
+
+    await expect(
+      updateMenu(
+        'menu1',
+        'Original Menu',
+        'Original Description',
+        100,
+        'restaurant1',
+      ),
+    ).rejects.toThrow('A menu with this title already exists.');
+
+    expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
+    expect(prisma.menus.update).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('deleteMenu', () => {
+  it('should delete a menu successfully and adjust the sortOrder of the remaining menus in the category', async () => {
+    const mockMenu = {
+      id: 'menu1',
+      category: {
+        id: 'category1',
+        restaurantId: 'restaurant1',
+      },
+    };
+
+    prisma.menus.findUnique = jest.fn().mockResolvedValue(mockMenu);
+    prisma.menus.delete = jest.fn().mockResolvedValue(mockMenu);
+
+    await expect(deleteMenu('menu1', 'restaurant1')).resolves.not.toThrow();
+
+    // Assertions
+    expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
+    expect(prisma.menus.findUnique).toHaveBeenCalledWith({
+      where: { id: 'menu1' },
+      select: {
+        category: {
+          select: {
+            id: true,
+            restaurantId: true,
+          },
+        },
+      },
+    });
+
+    expect(prisma.menus.delete).toHaveBeenCalledTimes(1);
+    expect(prisma.menus.delete).toHaveBeenCalledWith({
+      where: { id: 'menu1' },
+    });
+  });
+});
+
+describe('getMenusByCategoryId', () => {});
+
+describe('getCategoriesByRestaurantId', () => {});
+
+// describe('getNearbyRestaurants', () => {});

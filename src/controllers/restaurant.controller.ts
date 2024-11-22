@@ -146,7 +146,6 @@ async function handleCreateMenu(req: CustomRequest, res: Response) {
         title: menu.title,
         description: menu.description,
         price: menu.price,
-        sortOrder: menu.sortOrder,
         createdAt: menu.createdAt,
       },
     });
@@ -180,7 +179,6 @@ async function handleGetMenusByCategory(req: CustomRequest, res: Response) {
       title: menu.title,
       description: menu.description,
       price: menu.price,
-      sortOrder: menu.sortOrder,
       createdAt: menu.createdAt,
     }));
 
@@ -196,13 +194,12 @@ async function handleGetMenusByCategory(req: CustomRequest, res: Response) {
 async function handleUpdateMenu(req: CustomRequest, res: Response) {
   try {
     const { menuId } = req.params;
-    const { title, description, price, sortOrder } = req.body;
+    const { title, description, price } = req.body;
 
     updateMenuSchema.parse({
       title,
       description,
       price,
-      sortOrder,
     });
 
     const menu = await updateMenu(
@@ -210,7 +207,6 @@ async function handleUpdateMenu(req: CustomRequest, res: Response) {
       title,
       description,
       price,
-      sortOrder,
       req.userId as string,
     );
 
@@ -221,7 +217,6 @@ async function handleUpdateMenu(req: CustomRequest, res: Response) {
         title: menu.title,
         description: menu.description,
         price: menu.price,
-        sortOrder: menu.sortOrder,
         createdAt: menu.createdAt,
       },
     });
