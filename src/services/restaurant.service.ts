@@ -15,29 +15,26 @@ async function createCategory(
 ) {
   try {
     // calculate sortOrder
-    const categories = await prisma.categories.findMany({
+    const categoryCount = await prisma.categories.count({
       where: {
         restaurantId,
       },
-      orderBy: {
-        sortOrder: 'desc',
-      },
     });
-
-    const sortOrder = categories.length > 0 ? categories[0].sortOrder + 1 : 0;
 
     return await prisma.categories.create({
       data: {
         title,
         description,
-        sortOrder: sortOrder,
         restaurantId,
+        sortOrder: categoryCount,
       },
       select: {
         id: true,
         title: true,
         sortOrder: true,
         description: true,
+        menus: true,
+        updatedAt: true,
         createdAt: true,
       },
     });
@@ -47,7 +44,7 @@ async function createCategory(
         error.code === 'P2002' &&
         (error.meta?.target as string[])?.includes('title')
       ) {
-        throw new Error('A category with this title already exists');
+        throw new Error('A category with this title already exists.');
       }
     }
     throw error;
@@ -72,29 +69,48 @@ async function updateCategory(
       where: {
         id: categoryId,
       },
+      select: {
+        restaurantId: true,
+        sortOrder: true,
+      },
     });
 
-    if (!category) {
+    if (!category || category.restaurantId !== restaurantId) {
       throw new Error('Category not found');
     }
 
-    if (category.restaurantId !== restaurantId) {
-      throw new Error('Category not found');
-    }
-
+    // Handle sortOrder update if it has changed
     if (sortOrder !== category.sortOrder) {
-      const categories = await prisma.categories.findMany({
-        where: {
-          restaurantId,
-        },
-        orderBy: {
-          sortOrder: 'desc',
-        },
-      });
+      // const categoryCount = await prisma.categories.count({
+      //   where: { restaurantId },
+      // });
 
-      if (sortOrder < 0 || sortOrder > categories.length - 1) {
-        throw new Error('Invalid sortOrder');
-      }
+      // if (sortOrder < 0 || sortOrder >= categoryCount) {
+      //   throw new Error('Invalid sortOrder');
+      // }
+
+      // Adjust sortOrder for other categories
+      await prisma.$transaction(async prisma => {
+        if (sortOrder > category.sortOrder) {
+          // Decrement sortOrder for categories between current and new position
+          await prisma.categories.updateMany({
+            where: {
+              restaurantId,
+              sortOrder: { gt: category.sortOrder, lte: sortOrder },
+            },
+            data: { sortOrder: { decrement: 1 } },
+          });
+        } else if (sortOrder < category.sortOrder) {
+          // Increment sortOrder for categories between new and current position
+          await prisma.categories.updateMany({
+            where: {
+              restaurantId,
+              sortOrder: { gte: sortOrder, lt: category.sortOrder },
+            },
+            data: { sortOrder: { increment: 1 } },
+          });
+        }
+      });
     }
 
     return await prisma.categories.update({
@@ -112,6 +128,7 @@ async function updateCategory(
         description: true,
         sortOrder: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
   } catch (error) {
@@ -120,7 +137,7 @@ async function updateCategory(
         error.code === 'P2002' &&
         (error.meta?.target as string[])?.includes('title')
       ) {
-        throw new Error('A category with this title already exists');
+        throw new Error('A category with this title already exists.');
       }
     }
     throw error;
@@ -154,12 +171,10 @@ async function createMenu(
   title: string,
   description: string,
   price: number,
-  sortOrder: number,
   categoryId: string,
   restaurantId: string,
 ) {
   try {
-    // validate sortOrder
     const category = await prisma.categories.findUnique({
       where: {
         id: categoryId,
@@ -170,27 +185,11 @@ async function createMenu(
       throw new Error('Category not found');
     }
 
-    const menus = await prisma.menus.findMany({
-      where: {
-        categoryId,
-      },
-      orderBy: {
-        sortOrder: 'desc',
-      },
-    });
-
-    if (menus.length > 0) {
-      sortOrder = menus[menus.length - 1].sortOrder + 1;
-    } else {
-      sortOrder = 1;
-    }
-
     return await prisma.menus.create({
       data: {
         title,
         description,
         price,
-        sortOrder,
         category: {
           connect: {
             id: categoryId,
@@ -204,22 +203,11 @@ async function createMenu(
         error.code === 'P2002' &&
         (error.meta?.target as string[])?.includes('title')
       ) {
-        throw new Error('A menu with this title already exists');
+        throw new Error('A menu with this title already exists.');
       }
     }
     throw error;
   }
-}
-
-async function getMenusByCategoryId(categoryId: string) {
-  return await prisma.menus.findMany({
-    where: {
-      categoryId,
-    },
-    orderBy: {
-      sortOrder: 'asc',
-    },
-  });
 }
 
 async function updateMenu(
@@ -227,7 +215,6 @@ async function updateMenu(
   title: string,
   description: string,
   price: number,
-  sortOrder: number,
   restaurantId: string,
 ) {
   try {
@@ -237,7 +224,6 @@ async function updateMenu(
         id: menuId,
       },
       select: {
-        sortOrder: true,
         category: {
           select: {
             id: true,
@@ -248,22 +234,7 @@ async function updateMenu(
     });
 
     if (!menu || menu.category.restaurantId !== restaurantId) {
-      throw new Error('Menu not found');
-    }
-
-    if (sortOrder !== menu.sortOrder) {
-      const menus = await prisma.menus.findMany({
-        where: {
-          categoryId: menu.category.id,
-        },
-        orderBy: {
-          sortOrder: 'desc',
-        },
-      });
-
-      if (sortOrder < 0 || sortOrder > menus.length - 1) {
-        throw new Error('Invalid sortOrder');
-      }
+      throw new Error('Menu not found.');
     }
 
     return await prisma.menus.update({
@@ -274,7 +245,14 @@ async function updateMenu(
         title,
         description,
         price,
-        sortOrder,
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
   } catch (error) {
@@ -283,7 +261,7 @@ async function updateMenu(
         error.code === 'P2002' &&
         (error.meta?.target as string[])?.includes('title')
       ) {
-        throw new Error('A menu with this title already exists');
+        throw new Error('A menu with this title already exists.');
       }
     }
     throw error;
@@ -291,26 +269,41 @@ async function updateMenu(
 }
 
 async function deleteMenu(menuId: string, restaurantId: string) {
-  const menu = await prisma.menus.findUnique({
-    where: {
-      id: menuId,
-    },
-    select: {
-      category: {
-        select: {
-          restaurantId: true,
+  try {
+    const menu = await prisma.menus.findUnique({
+      where: {
+        id: menuId,
+      },
+      select: {
+        category: {
+          select: {
+            id: true,
+            restaurantId: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!menu || menu.category.restaurantId !== restaurantId) {
-    throw new Error('Menu not found');
+    if (!menu || menu.category.restaurantId !== restaurantId) {
+      throw new Error('Menu not found.');
+    }
+
+    // Delete the menu
+    await prisma.menus.delete({
+      where: {
+        id: menuId,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    throw error;
   }
+}
 
-  await prisma.menus.delete({
+async function getMenusByCategoryId(categoryId: string) {
+  return await prisma.menus.findMany({
     where: {
-      id: menuId,
+      categoryId,
     },
   });
 }

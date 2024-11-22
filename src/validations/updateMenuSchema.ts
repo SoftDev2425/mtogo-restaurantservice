@@ -12,7 +12,6 @@ const updateMenuSchema = z.object({
     .max(255, 'Description is too long')
     .optional(),
   price: z.number().int().min(1, 'Please enter a valid price').optional(),
-  sortOrder: z.number().int().optional(),
 });
 
 export { updateMenuSchema };

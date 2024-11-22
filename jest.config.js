@@ -3,6 +3,7 @@ module.exports = {
   testEnvironment: 'node',
   coverageDirectory: 'coverage',
   collectCoverageFrom: ['src/**/*.{js,ts}'],
+  setupFilesAfterEnv: ['<rootDir>/src/tests/setup/setup-env.ts'],
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
   },
