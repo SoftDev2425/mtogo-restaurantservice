@@ -9,13 +9,9 @@ interface RestaurantResponse {
 async function getRestaurantsByZipCode(zipcode: string, category?: string) {
   validateZipCodeSearch(zipcode);
 
-  console.log('Before fetch', zipcode, category);
-
   const restaurantData = await fetch(
     `${process.env.AUTH_SERVICE_URL}/api/restaurants/zipcode/${zipcode}`,
   );
-
-  console.log('After fetch', restaurantData);
 
   const response = (await restaurantData.json()) as RestaurantResponse;
 

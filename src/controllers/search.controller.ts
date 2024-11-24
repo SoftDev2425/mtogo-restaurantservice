@@ -12,6 +12,11 @@ async function handleGetRestaurantsByZipCode(
 
     const { restaurants } = await getRestaurantsByZipCode(zipCode, category);
 
+    // If no restaurants found, return an empty array with a 200 status
+    if (restaurants.length === 0) {
+      return res.status(200).json([]); // Ensure an empty array is returned with status 200
+    }
+
     return res.status(200).json(restaurants);
   } catch (error) {
     if (error instanceof Error) {
