@@ -681,3 +681,459 @@ describe('Get categories by restaurant ID', () => {
     expect(response.body.categories).toEqual([]);
   });
 });
+
+describe('Create menu', () => {
+  it('should create a new menu for a category successfully for a restaurant', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'RESTAURANT',
+      userId: 'restaurant-user-id',
+    });
+
+    const testCategory = await createTestCategory();
+
+    const response = await supertest(app)
+      .post(`/api/restaurants/categories/${testCategory.id}/menus`)
+      .set(testHeaders)
+      .send({
+        title: 'Margherita Pizza',
+        description: 'Classic Margherita pizza',
+        price: 10,
+      })
+      .expect(201);
+
+    expect(response.body).toMatchObject({
+      message: 'Menu created successfully',
+      menu: {
+        title: 'Margherita Pizza',
+        description: 'Classic Margherita pizza',
+        price: 10,
+        createdAt: expect.any(String),
+      },
+    });
+
+    const menu = await prisma.menus.findFirst({
+      where: {
+        title: 'Margherita Pizza',
+        categoryId: testCategory.id,
+      },
+    });
+
+    expect(menu).toBeTruthy();
+  });
+
+  it('should fail creating a menu for users without restaurant role', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'CUSTOMER',
+      userId: 'customer-user-id',
+    });
+
+    const testCategory = await createTestCategory();
+
+    const response = await supertest(app)
+      .post(`/api/restaurants/categories/${testCategory.id}/menus`)
+      .set(testHeaders)
+      .send({
+        title: 'Margherita Pizza',
+        description: 'Classic Margherita pizza',
+        price: 10,
+      })
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: 'You are not authorized to perform this action.',
+    });
+
+    const menu = await prisma.menus.findFirst({
+      where: {
+        title: 'Margherita Pizza',
+        categoryId: testCategory.id,
+      },
+    });
+
+    expect(menu).toBeFalsy();
+  });
+
+  it('should return validation errors for invalid inputs when creating a menu', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'RESTAURANT',
+      userId: 'restaurant-user-id',
+    });
+
+    const testCategory = await createTestCategory();
+
+    const response = await supertest(app)
+      .post(`/api/restaurants/categories/${testCategory.id}/menus`)
+      .set(testHeaders)
+      .send({
+        title: '',
+        description: '',
+        price: -1,
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      errors: [
+        {
+          field: 'title',
+          message: 'Please enter a valid title',
+        },
+        {
+          field: 'description',
+          message: 'Please enter a valid description',
+        },
+        {
+          field: 'price',
+          message: 'Please enter a valid price',
+        },
+      ],
+    });
+
+    const menu = await prisma.menus.findFirst({
+      where: {
+        categoryId: testCategory.id,
+      },
+    });
+
+    expect(menu).toBeFalsy();
+  });
+
+  it('should handle boundary values', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'RESTAURANT',
+      userId: 'restaurant-user-id',
+    });
+
+    const testCategory = await createTestCategory();
+
+    const response = await supertest(app)
+      .post(`/api/restaurants/categories/${testCategory.id}/menus`)
+      .set(testHeaders)
+      .send({
+        title: 'A'.repeat(55), // Testing maximum allowed length
+        description: 'B'.repeat(255), // Testing maximum allowed length
+        price: 200,
+      })
+      .expect(201);
+
+    expect(response.body).toMatchObject({
+      message: 'Menu created successfully',
+      menu: {
+        id: expect.any(String),
+        title: 'A'.repeat(55),
+        description: 'B'.repeat(255),
+        price: 200,
+        createdAt: expect.any(String),
+      },
+    });
+  });
+});
+
+describe('Update menu', () => {
+  it('should update a menu for a restaurant successfully', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'RESTAURANT',
+      userId: 'restaurant-user-id',
+    });
+
+    const testCategory = await createTestCategory();
+
+    const testMenu = await prisma.menus.create({
+      data: {
+        title: 'Margherita Pizza',
+        description: 'Classic Margherita pizza',
+        price: 10,
+        categoryId: testCategory.id,
+      },
+    });
+
+    const response = await supertest(app)
+      .put(`/api/restaurants/menus/${testMenu.id}`)
+      .set(testHeaders)
+      .send({
+        title: 'Updated Margherita Pizza',
+        description: 'Updated Margherita pizza',
+        price: 12,
+      })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      message: 'Menu updated successfully',
+      menu: {
+        title: 'Updated Margherita Pizza',
+        description: 'Updated Margherita pizza',
+        price: 12,
+        createdAt: expect.any(String),
+      },
+    });
+
+    const updatedMenu = await prisma.menus.findFirst({
+      where: {
+        id: testMenu.id,
+      },
+    });
+
+    expect(updatedMenu).toMatchObject({
+      title: 'Updated Margherita Pizza',
+      description: 'Updated Margherita pizza',
+      price: 12,
+    });
+  });
+
+  it('should not allow customers to update a menu', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'CUSTOMER',
+      userId: 'customer-user-id',
+    });
+
+    const testCategory = await createTestCategory();
+
+    const testMenu = await prisma.menus.create({
+      data: {
+        title: 'Margherita Pizza',
+        description: 'Classic Margherita pizza',
+        price: 10,
+        categoryId: testCategory.id,
+      },
+    });
+
+    const response = await supertest(app)
+      .put(`/api/restaurants/menus/${testMenu.id}`)
+      .set(testHeaders)
+      .send({
+        title: 'Updated Margherita Pizza',
+        description: 'Updated Margherita pizza',
+        price: 12,
+      })
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: 'You are not authorized to perform this action.',
+    });
+
+    const updatedMenu = await prisma.menus.findFirst({
+      where: {
+        id: testMenu.id,
+      },
+    });
+
+    expect(updatedMenu).toMatchObject({
+      title: 'Margherita Pizza',
+      description: 'Classic Margherita pizza',
+      price: 10,
+    });
+  });
+
+  it('should return validation errors for invalid inputs when updating a menu', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'RESTAURANT',
+      userId: 'restaurant-user-id',
+    });
+
+    const testCategory = await createTestCategory();
+
+    const testMenu = await prisma.menus.create({
+      data: {
+        title: 'Margherita Pizza',
+        description: 'Classic Margherita pizza',
+        price: 10,
+        categoryId: testCategory.id,
+      },
+    });
+
+    const response = await supertest(app)
+      .put(`/api/restaurants/menus/${testMenu.id}`)
+      .set(testHeaders)
+      .send({
+        title: '',
+        description: '',
+        price: -1,
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      errors: [
+        {
+          field: 'title',
+          message: 'Please enter a valid title',
+        },
+        {
+          field: 'description',
+          message: 'Please enter a valid description',
+        },
+        {
+          field: 'price',
+          message: 'Please enter a valid price',
+        },
+      ],
+    });
+
+    const updatedMenu = await prisma.menus.findFirst({
+      where: {
+        id: testMenu.id,
+      },
+    });
+
+    expect(updatedMenu).toMatchObject({
+      title: 'Margherita Pizza',
+      description: 'Classic Margherita pizza',
+      price: 10,
+    });
+  });
+});
+
+describe('Delete menu', () => {
+  it('should delete a menu for a restaurant successfully', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'RESTAURANT',
+      userId: 'restaurant-user-id',
+    });
+
+    const testCategory = await createTestCategory();
+
+    const testMenu = await prisma.menus.create({
+      data: {
+        title: 'Margherita Pizza',
+        description: 'Classic Margherita pizza',
+        price: 10,
+        categoryId: testCategory.id,
+      },
+    });
+
+    await supertest(app)
+      .delete(`/api/restaurants/menus/${testMenu.id}`)
+      .set(testHeaders)
+      .expect(200);
+
+    const deletedMenu = await prisma.menus.findFirst({
+      where: {
+        id: testMenu.id,
+      },
+    });
+
+    expect(deletedMenu).toBeFalsy();
+  });
+
+  it('should not allow customers to delete a menu', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'CUSTOMER',
+      userId: 'customer-user-id',
+    });
+
+    const testCategory = await createTestCategory();
+
+    const testMenu = await prisma.menus.create({
+      data: {
+        title: 'Margherita Pizza',
+        description: 'Classic Margherita pizza',
+        price: 10,
+        categoryId: testCategory.id,
+      },
+    });
+
+    const response = await supertest(app)
+      .delete(`/api/restaurants/menus/${testMenu.id}`)
+      .set(testHeaders)
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: 'You are not authorized to perform this action.',
+    });
+
+    const menu = await prisma.menus.findFirst({
+      where: {
+        id: testMenu.id,
+      },
+    });
+
+    expect(menu).toBeTruthy();
+  });
+
+  it('should return an error for an invalid menu ID', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'RESTAURANT',
+      userId: 'restaurant-user-id',
+    });
+
+    const response = await supertest(app)
+      .delete(`/api/restaurants/menus/invalid-id`)
+      .set(testHeaders)
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      message: 'Menu not found.',
+    });
+  });
+
+  it('should return an unauthorized error if no headers are provided', async () => {
+    const testCategory = await createTestCategory();
+
+    const menu = await prisma.menus.create({
+      data: {
+        title: 'Margherita Pizza',
+        description: 'Classic Margherita pizza',
+        price: 10,
+        categoryId: testCategory.id,
+      },
+    });
+
+    const response = await supertest(app)
+      .delete(`/api/restaurants/menus/${menu.id}`)
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: 'You are not authorized to perform this action.',
+    });
+
+    const existingMenu = await prisma.menus.findUnique({
+      where: { id: menu.id },
+    });
+    expect(existingMenu).not.toBeNull();
+  });
+});
+
+describe('Get menu by id', () => {
+  it('should retrieve a menu by ID successfully', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'CUSTOMER',
+      userId: 'customer-user-id',
+    });
+
+    const testCategory = await createTestCategory();
+
+    const testMenu = await prisma.menus.create({
+      data: {
+        title: 'Margherita Pizza',
+        description: 'Classic Margherita pizza',
+        price: 10,
+        categoryId: testCategory.id,
+      },
+    });
+
+    const response = await supertest(app)
+      .get(`/api/restaurants/menus/${testMenu.id}`)
+      .set(testHeaders)
+      .expect(200);
+
+    expect(response.body.menu).toMatchObject({
+      title: 'Margherita Pizza',
+      description: 'Classic Margherita pizza',
+      price: 10,
+    });
+  });
+
+  it('should return an error for an invalid menu ID', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'CUSTOMER',
+      userId: 'customer-user-id',
+    });
+
+    const response = await supertest(app)
+      .get('/api/restaurants/menus/invalid-id')
+      .set(testHeaders)
+      .expect(404);
+
+    expect(response.body).toMatchObject({
+      message: 'Menu not found.',
+    });
+  });
+});
