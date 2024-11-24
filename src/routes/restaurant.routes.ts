@@ -1,10 +1,5 @@
 import restaurantController from '../controllers/restaurant.controller';
-import basketController from '../controllers/basket.controller';
-import {
-  requireCustomer,
-  requireRestaurant,
-  requireRoles,
-} from '../middlewares/role';
+import { requireRestaurant, requireRoles } from '../middlewares/role';
 import express from 'express';
 
 const router = express.Router();
@@ -78,20 +73,5 @@ router.get(
 );
 
 router.get('/menus/:menuId', restaurantController.handleGetMenuById);
-
-// BASKET ROUTES
-router.get('/basket', requireCustomer, basketController.handleGetBasket);
-
-router.post('/basket', requireCustomer, basketController.handleAddToBasket);
-
-router.put('/basket', requireCustomer, basketController.handleUpdateBasket);
-
-router.delete('/basket', requireCustomer, basketController.handleDeleteBasket);
-
-router.post(
-  '/basket/checkout',
-  requireCustomer,
-  basketController.handleCheckout,
-);
 
 export default router;

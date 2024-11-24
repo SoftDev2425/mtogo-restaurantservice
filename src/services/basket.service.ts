@@ -121,23 +121,18 @@ async function clearBasket(customerId: string, restaurantId: string) {
     throw new Error('Basket not found');
   }
 
-  await prisma.basketItems.deleteMany({
-    where: { basketId: basket.id },
-  });
-
-  await prisma.basket.delete({
-    where: { id: basket.id },
-  });
+  await prisma.$transaction([
+    prisma.basketItems.deleteMany({
+      where: { basketId: basket.id },
+    }),
+    prisma.basket.delete({
+      where: { id: basket.id },
+    }),
+  ]);
 }
 
 async function checkout(customerId: string, restaurantId: string) {
   console.log('Checkout', customerId, restaurantId);
 }
 
-export {
-  getBasket,
-  addToBasket,
-  updateBasketItem,
-  clearBasket,
-  checkout,
-};
+export { getBasket, addToBasket, updateBasketItem, clearBasket, checkout };
