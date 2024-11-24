@@ -8,6 +8,10 @@ jest.mock('../../services/search.service', () => ({
 }));
 
 describe('Search Restaurants by Zip Code', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('should return restaurants when search with zip code', async () => {
     // Arrange
     const zipCode = '1234';
@@ -44,5 +48,25 @@ describe('Search Restaurants by Zip Code', () => {
 
     // Assert that the returned restaurants match the mocked data
     expect(response.body).toEqual(mockedRestaurants);
+  });
+
+  it('should throw an error if sending invalid Zip Code', async () => {
+    // Arrange
+    const invalidZipCode = '123A';
+
+    // Mock the service to return a rejected promise with an error
+    const mockedGetRestaurantsByZipCode =
+      restaurantService.getRestaurantsByZipCode as jest.Mock;
+    mockedGetRestaurantsByZipCode.mockRejectedValue(
+      new Error('Invalid Danish zip code'),
+    );
+
+    // Act & Assert
+    const response = await supertest(app)
+      .get(`/api/search/zipcode/${invalidZipCode}`)
+      .expect(400);
+
+    // Assert that the error message matches the expected error
+    expect(response.body.message).toBe('Invalid Danish zip code');
   });
 });
