@@ -594,4 +594,90 @@ describe('Restaurant delete category', () => {
       message: 'Category not found',
     });
   });
+
+  it('should return an unauthorized error if no headers are provided', async () => {
+    const category = await prisma.categories.create({
+      data: {
+        title: 'Sides',
+        description: 'Accompaniments',
+        restaurantId: 'restaurant-user-id',
+        sortOrder: 4,
+      },
+    });
+
+    const response = await supertest(app)
+      .delete(`/api/restaurants/categories/${category.id}`)
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: 'You are not authorized to perform this action.',
+    });
+
+    const existingCategory = await prisma.categories.findUnique({
+      where: { id: category.id },
+    });
+    expect(existingCategory).not.toBeNull();
+  });
+});
+
+describe('Get categories by restaurant ID', () => {
+  it('should retrieve all categories for the given restaurant', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'CUSTOMER',
+      userId: 'customer-user-id',
+    });
+
+    // Pre-create categories for the restaurant
+    const restaurantId = 'restaurant-test-id';
+    await prisma.categories.createMany({
+      data: [
+        {
+          title: 'Appetizers',
+          description: 'Starter dishes',
+          restaurantId,
+          sortOrder: 0,
+        },
+        {
+          title: 'Mains',
+          description: 'Main course',
+          restaurantId,
+          sortOrder: 1,
+        },
+      ],
+    });
+
+    const response = await supertest(app)
+      .get(`/api/restaurants/${restaurantId}/categories`)
+      .set(testHeaders)
+      .expect(200);
+
+    expect(response.body.categories).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: 'Appetizers',
+          description: 'Starter dishes',
+          sortOrder: 0,
+        }),
+        expect.objectContaining({
+          title: 'Mains',
+          description: 'Main course',
+          sortOrder: 1,
+        }),
+      ]),
+    );
+  });
+
+  it('should return an empty array if no categories are found', async () => {
+    const testHeaders = setTestHeaders({
+      role: 'CUSTOMER',
+      userId: 'customer-user-id',
+    });
+
+    const response = await supertest(app)
+      .get('/api/restaurants/restaurant-id/categories')
+      .set(testHeaders)
+      .expect(200);
+
+    expect(response.body.categories).toEqual([]);
+  });
 });
