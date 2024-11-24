@@ -8,8 +8,9 @@ async function handleGetRestaurantsByZipCode(
 ) {
   try {
     const zipCode = req.params.zip;
+    const category = req.params.category as string | undefined;
 
-    const { restaurants } = await getRestaurantsByZipCode(zipCode);
+    const { restaurants } = await getRestaurantsByZipCode(zipCode, category);
 
     return res.status(200).json(restaurants);
   } catch (error) {

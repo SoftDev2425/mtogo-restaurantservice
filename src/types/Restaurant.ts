@@ -3,4 +3,9 @@ export interface Restaurant {
   name: string;
   email: string;
   phone: string;
+  categories: Category[];
+}
+
+interface Category {
+  title: string;
 }
