@@ -24,7 +24,7 @@ async function createCategory(
     return await prisma.categories.create({
       data: {
         title,
-        description,
+        description: description || '',
         restaurantId,
         sortOrder: categoryCount,
       },
