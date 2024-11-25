@@ -15,7 +15,7 @@ datasource db {
 
 model Categories {
   id          String   @id @default(cuid())
-  title       String   @unique @db.VarChar(255)
+  title       String   @db.VarChar(255)
   description String?  @db.VarChar(255)
   sortOrder   Int
   createdAt   DateTime @default(now())
@@ -27,6 +27,9 @@ model Categories {
   @@index([restaurantId], name: "restaurant_id_index_category")
   @@index([title], name: "title_index")
   @@index([sortOrder], name: "sort_order_index")
+
+  // Composite unique constraint to prevent the same restaurant having multiple categories with the same title
+  @@unique([restaurantId, title], name: "unique_restaurant_category")
 }
 
 model Menus {
