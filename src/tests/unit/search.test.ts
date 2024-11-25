@@ -25,12 +25,14 @@ describe('getRestaurantsByZipCode', () => {
             name: 'Test A',
             email: 'test@a.com',
             phone: '12345678',
+            address: {},
           },
           {
             id: '2',
             name: 'Test B',
             email: 'test@b.com',
             phone: '87654321',
+            address: {},
           },
         ],
       }),
@@ -50,6 +52,7 @@ describe('getRestaurantsByZipCode', () => {
       name: 'Test A',
       email: 'test@a.com',
       phone: '12345678',
+      address: {},
       categories: ['Pizza', 'Burger'],
     });
 
@@ -57,6 +60,7 @@ describe('getRestaurantsByZipCode', () => {
       name: 'Test B',
       email: 'test@b.com',
       phone: '87654321',
+      address: {},
       categories: ['Sushi', 'Ramen'],
     });
   });
@@ -145,19 +149,21 @@ describe('filterRestaurantByCategory', () => {
   it('should filter search result by category', async () => {
     // Arrange
     const zipCode = '1234';
-    const categoryFilter = 'Pizza';
+    const categoryFilter = ['Pizza'];
 
     const mockRestaurants = [
       {
         id: '1',
         name: 'The Italian Bistro',
         email: 'italian@bistro.com',
+        address: {},
         phone: '12345678',
       },
       {
         id: '2',
         name: 'Burger House',
         email: 'burger@house.com',
+        address: {},
         phone: '87654321',
       },
     ];
@@ -172,6 +178,7 @@ describe('filterRestaurantByCategory', () => {
         name: 'The Italian Bistro',
         email: 'italian@bistro.com',
         phone: '12345678',
+        address: {},
         categories: ['Pizza'],
       },
     ];
@@ -212,7 +219,7 @@ describe('filterRestaurantByCategory', () => {
   it('should not break if category is empty', async () => {
     // Arrange
     const zipCode = '1234';
-    const categoryFilter = ''; // Empty category filter
+    const categoryFilter = ['']; // Empty category filter
 
     const mockRestaurants = [
       {
@@ -220,12 +227,14 @@ describe('filterRestaurantByCategory', () => {
         name: 'The Italian Bistro',
         email: 'italian@bistro.com',
         phone: '12345678',
+        address: {},
       },
       {
         id: '2',
         name: 'Burger House',
         email: 'burger@house.com',
         phone: '87654321',
+        address: {},
       },
     ];
 
@@ -238,6 +247,7 @@ describe('filterRestaurantByCategory', () => {
       name: restaurant.name,
       email: restaurant.email,
       phone: restaurant.phone,
+      address: restaurant.address,
       categories: mockCategories[restaurant.id], // Add categories
     }));
 
@@ -265,7 +275,7 @@ describe('filterRestaurantByCategory', () => {
   it('should not break if category does not exist', async () => {
     // Arrange
     const zipCode = '1234';
-    const categoryFilter = 'NonExistentCategory'; // This category doesn't exist in mock data
+    const categoryFilter = ['NonExistentCategory']; // This category doesn't exist in mock data
 
     const mockRestaurants = [
       {

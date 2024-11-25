@@ -76,7 +76,7 @@ describe('Filter Search by Categories', () => {
     jest.clearAllMocks();
   });
 
-  const categoryURL = `${URL}1234/category/`;
+  const categoryURL = `${URL}1234?category=`;
 
   it('should successfully filter search result from category input', async () => {
     // Arrange
