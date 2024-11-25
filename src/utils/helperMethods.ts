@@ -1,3 +1,6 @@
+import prisma from '../../prisma/client';
+import { faker } from '@faker-js/faker';
+
 export const setTestHeaders = ({
   role,
   userId,
@@ -30,11 +33,12 @@ export const createTestMenu = async () => {
 };
 
 export const createTestCategory = async () => {
-  return {
-    id: 'categoryId',
-    title: 'categoryTitle',
-    description: 'categoryDescription',
-    sortOrder: 1,
-    createdAt: new Date(),
-  };
+  return await prisma.categories.create({
+    data: {
+      title: faker.lorem.word(20),
+      description: faker.food.description(),
+      sortOrder: 0,
+      restaurantId: 'restaurant-user-id',
+    },
+  });
 };

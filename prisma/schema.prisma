@@ -33,15 +33,42 @@ model Categories {
 }
 
 model Menus {
-  id          String     @id @default(cuid())
-  title       String     @unique @db.VarChar(255)
+  id          String        @id @default(cuid())
+  title       String        @unique @db.VarChar(255)
   price       Float
-  description String?    @db.VarChar(255)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  category    Categories @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  description String?       @db.VarChar(255)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  category    Categories    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId  String
+  BasketItems BasketItems[]
 
   @@index([categoryId], name: "category_id_index")
   @@index([price], name: "price_index")
+}
+
+model Basket {
+  id           String        @id @default(cuid())
+  customerId   String        @db.VarChar(255)
+  restaurantId String        @db.VarChar(255)
+  items        BasketItems[]
+  note         String?       @db.Text // Optional customer note
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([customerId], name: "customer_id_index_basket")
+  @@index([restaurantId], name: "restaurant_id_index_basket")
+}
+
+model BasketItems {
+  id        String   @id @default(cuid())
+  quantity  Int      @default(1)
+  price     Float // Price at the time of adding to basket
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  menu     Menus  @relation(fields: [menuId], references: [id])
+  Basket   Basket @relation(fields: [basketId], references: [id])
+  menuId   String @db.VarChar(255)
+  basketId String
 }
