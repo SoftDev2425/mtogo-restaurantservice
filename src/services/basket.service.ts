@@ -15,6 +15,7 @@ async function getBasket(customerId: string, restaurantId: string) {
 async function addToBasket(
   customerId: string,
   menuId: string,
+  title: string,
   quantity: number,
   price: number,
   restaurantId: string,
@@ -55,6 +56,7 @@ async function addToBasket(
     await prisma.basketItems.create({
       data: {
         basketId: basket.id,
+        title,
         menuId,
         quantity,
         price,

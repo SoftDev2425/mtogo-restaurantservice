@@ -47,18 +47,19 @@ async function handleGetBasket(req: CustomRequest, res: Response) {
 
 async function handleAddToBasket(req: CustomRequest, res: Response) {
   try {
-    const { menuId, quantity, price, restaurantId } = req.body;
+    const { menuId, title, quantity, price, restaurantId } = req.body;
 
-    if (!menuId || !quantity || !price || !restaurantId) {
+    if (!menuId || !title || !quantity || !price || !restaurantId) {
       return res.status(400).json({
         message:
-          'menuId, quantity, price, and restaurantId are required in the request body',
+          'menuId, title, quantity, price, and restaurantId are required in the request body',
       });
     }
 
     const basket = await addToBasket(
       req.userId as string,
       menuId,
+      title,
       quantity,
       price,
       restaurantId,

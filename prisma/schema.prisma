@@ -24,12 +24,11 @@ model Categories {
 
   restaurantId String
 
+  // Composite unique constraint to prevent the same restaurant having multiple categories with the same title
+  @@unique([restaurantId, title], name: "unique_restaurant_category")
   @@index([restaurantId], name: "restaurant_id_index_category")
   @@index([title], name: "title_index")
   @@index([sortOrder], name: "sort_order_index")
-
-  // Composite unique constraint to prevent the same restaurant having multiple categories with the same title
-  @@unique([restaurantId, title], name: "unique_restaurant_category")
 }
 
 model Menus {
@@ -62,6 +61,7 @@ model Basket {
 
 model BasketItems {
   id        String   @id @default(cuid())
+  title     String   @db.VarChar(255)
   quantity  Int      @default(1)
   price     Float // Price at the time of adding to basket
   createdAt DateTime @default(now())
