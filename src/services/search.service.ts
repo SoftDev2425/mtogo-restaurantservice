@@ -1,12 +1,13 @@
 import { getCategoriesByRestaurantId } from './restaurant.service';
 import { Restaurant } from '../types/Restaurant';
 import { validateZipCodeSearch } from '../validations/validateZipCodeSearch';
+import levenshtein from 'fast-levenshtein';
 
 interface RestaurantResponse {
   restaurants: Restaurant[];
 }
 
-async function getRestaurantsByZipCode(zipcode: string, category?: string) {
+async function getRestaurantsByZipCode(zipcode: string, categories?: string[]) {
   validateZipCodeSearch(zipcode);
 
   const restaurantData = await fetch(
@@ -17,10 +18,14 @@ async function getRestaurantsByZipCode(zipcode: string, category?: string) {
 
   const restaurantsWithCategories = await Promise.all(
     response.restaurants.map(async (restaurant: Restaurant) => {
-      const categories = await getCategoriesByRestaurantId(restaurant.id);
-      const categoryTitles = categories.map(category => category.title);
+      const restaurantCategories = await getCategoriesByRestaurantId(
+        restaurant.id,
+      );
+      const categoryTitles = restaurantCategories.map(
+        category => category.title,
+      );
 
-      return filterRestaurantByCategory(restaurant, categoryTitles, category);
+      return filterRestaurantByCategory(restaurant, categoryTitles, categories);
     }),
   );
 
@@ -28,19 +33,20 @@ async function getRestaurantsByZipCode(zipcode: string, category?: string) {
   const filteredRestaurants = restaurantsWithCategories.filter(
     restaurant => restaurant !== null,
   );
-  return {
-    restaurants: filteredRestaurants,
-  };
+  return { restaurants: filteredRestaurants };
 }
 
 // Helper function to filter a restaurant by category
 function filterRestaurantByCategory(
   restaurant: Restaurant,
   categoryTitles: string[],
-  category?: string,
+  categories?: string[],
 ) {
-  if (category) {
-    const matchingCategories = getMatchingCategories(categoryTitles, category);
+  if (categories && categories.length > 0) {
+    const matchingCategories = getMatchingCategories(
+      categoryTitles,
+      categories,
+    );
 
     // If there are no matching categories, return null to filter out this restaurant
     if (matchingCategories.length === 0) {
@@ -52,6 +58,13 @@ function filterRestaurantByCategory(
       name: restaurant.name,
       email: restaurant.email,
       phone: restaurant.phone,
+      address: {
+        street: restaurant.address.street,
+        city: restaurant.address.city,
+        zip: restaurant.address.zip,
+        x: restaurant.address.x,
+        y: restaurant.address.y,
+      },
       categories: matchingCategories,
     };
   }
@@ -61,19 +74,37 @@ function filterRestaurantByCategory(
     name: restaurant.name,
     email: restaurant.email,
     phone: restaurant.phone,
+    address: {
+      street: restaurant.address.street,
+      city: restaurant.address.city,
+      zip: restaurant.address.zip,
+      x: restaurant.address.x,
+      y: restaurant.address.y,
+    },
     categories: categoryTitles,
   };
 }
 
-// Helper function to get matching categories (if any)
-function getMatchingCategories(categoryTitles: string[], category: string) {
-  if (!category || typeof category !== 'string') {
-    return [];
-  }
+// Helper function to get matching categories (with fuzzy matching support)
+function getMatchingCategories(categoryTitles: string[], categories: string[]) {
+  // Define similarity threshold
+  const SIMILARITY_THRESHOLD = 2; // Maximum Levenshtein distance for a match
 
-  return categoryTitles.filter(
-    cat => cat.toLowerCase() === category.toLowerCase(),
-  );
+  return categoryTitles.filter(title => {
+    const isMatching = categories.some(category => {
+      const distance = levenshtein.get(
+        title.toLowerCase(),
+        category.toLowerCase(),
+      );
+
+      return (
+        distance <= SIMILARITY_THRESHOLD ||
+        title.toLowerCase().includes(category.toLowerCase())
+      );
+    });
+
+    return isMatching;
+  });
 }
 
 export { getRestaurantsByZipCode };

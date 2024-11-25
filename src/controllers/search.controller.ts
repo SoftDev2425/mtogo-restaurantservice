@@ -7,17 +7,21 @@ async function handleGetRestaurantsByZipCode(
   res: Response,
 ) {
   try {
-    const zipCode = req.params.zip;
-    const category = req.params.category as string | undefined;
+    const { zipcode } = req.params;
 
-    const { restaurants } = await getRestaurantsByZipCode(zipCode, category);
+    const categoryQuery = req.query.category;
 
-    // If no restaurants found, return an empty array with a 200 status
-    if (restaurants.length === 0) {
-      return res.status(200).json([]); // Ensure an empty array is returned with status 200
+    let categories: string[] = [];
+
+    if (typeof categoryQuery === 'string') {
+      categories = categoryQuery.split(/[,&]/).map(cat => cat.trim());
+    } else if (Array.isArray(categoryQuery)) {
+      categories = (categoryQuery as string[]).map(cat => String(cat).trim());
     }
 
-    return res.status(200).json(restaurants);
+    const { restaurants } = await getRestaurantsByZipCode(zipcode, categories);
+
+    return res.status(200).json(restaurants.length > 0 ? restaurants : []);
   } catch (error) {
     if (error instanceof Error) {
       return res.status(400).json({ message: error.message });

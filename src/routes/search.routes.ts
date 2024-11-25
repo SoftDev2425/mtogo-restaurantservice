@@ -5,12 +5,6 @@ const router = express.Router();
 
 router.get('/', (_req, res) => res.sendStatus(200));
 
-router.get('/zipcode/:zip', searchController.handleGetRestaurantsByZipCode);
-
-// In your router file
-router.get(
-  '/zipcode/:zip/category/:category',
-  searchController.handleGetRestaurantsByZipCode,
-);
+router.get('/zipcode/:zipcode', searchController.handleGetRestaurantsByZipCode);
 
 export default router;
