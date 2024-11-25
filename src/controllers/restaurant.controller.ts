@@ -139,7 +139,7 @@ async function handleCreateMenu(req: CustomRequest, res: Response) {
       req.userId as string,
     );
 
-    return res.status(200).json({
+    return res.status(201).json({
       message: 'Menu created successfully',
       menu: {
         id: menu.id,
@@ -316,6 +316,10 @@ async function handleGetMenuById(req: CustomRequest, res: Response) {
 
     // Return menu details
     const menu = await getMenuById(menuId);
+
+    if (!menu) {
+      return res.status(404).json({ message: 'Menu not found.' });
+    }
 
     return res.status(200).json({
       menu,

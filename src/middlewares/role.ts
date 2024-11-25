@@ -6,7 +6,7 @@ export const requireRoles = (allowedRoles: string[]) => {
     if (!req.role || !allowedRoles.includes(req.role.toLowerCase())) {
       return res
         .status(403)
-        .json({ message: 'Forbidden: Insufficient permissions' });
+        .json({ message: 'You are not authorized to perform this action.' });
     }
     next(); // User has one of the allowed roles, proceed to the next middleware/route handler
   };
