@@ -1,7 +1,19 @@
 import prisma from '../../prisma/client';
 
-async function getBasket(customerId: string, restaurantId: string) {
+async function getBasketById(customerId: string, basketId: string) {
   return await prisma.basket.findFirst({
+    where: {
+      customerId,
+      id: basketId,
+    },
+    include: {
+      items: true,
+    },
+  });
+}
+
+async function getBasket(customerId: string, restaurantId: string) {
+  const basket = await prisma.basket.findFirst({
     where: {
       customerId,
       restaurantId,
@@ -10,6 +22,24 @@ async function getBasket(customerId: string, restaurantId: string) {
       items: true,
     },
   });
+
+  if (basket && basket?.items && basket.items.length === 0) {
+    await prisma.basketItems.deleteMany({
+      where: {
+        basketId: basket.id,
+      },
+    });
+
+    await prisma.basket.delete({
+      where: {
+        id: basket.id,
+      },
+    });
+
+    return null;
+  }
+
+  return basket;
 }
 
 async function addToBasket(
@@ -44,15 +74,28 @@ async function addToBasket(
   });
 
   if (existingMenu) {
-    await prisma.basketItems.update({
-      where: {
-        id: existingMenu.id,
-      },
-      data: {
-        quantity,
-      },
-    });
+    if (quantity > 0) {
+      await prisma.basketItems.update({
+        where: {
+          id: existingMenu.id,
+        },
+        data: {
+          quantity,
+          price,
+        },
+      });
+    } else {
+      await prisma.basketItems.delete({
+        where: {
+          id: existingMenu.id,
+        },
+      });
+    }
   } else {
+    if (quantity <= 0) {
+      throw new Error('Quantity must be greater than 0 for a new item');
+    }
+
     await prisma.basketItems.create({
       data: {
         basketId: basket.id,
@@ -137,4 +180,11 @@ async function checkout(customerId: string, restaurantId: string) {
   console.log('Checkout', customerId, restaurantId);
 }
 
-export { getBasket, addToBasket, updateBasketItem, clearBasket, checkout };
+export {
+  getBasketById,
+  getBasket,
+  addToBasket,
+  updateBasketItem,
+  clearBasket,
+  checkout,
+};

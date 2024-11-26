@@ -28,7 +28,7 @@
     "express": "^4.19.2",
     "kafkajs": "^2.2.4",
     "kysely": "^0.27.4",
-    "mtogo-proto-provider": "^1.0.7",
+    "mtogo-proto-provider": "^1.0.9",
     "pg": "^8.13.0",
     "winston": "^3.17.0",
     "zod": "^3.23.8"

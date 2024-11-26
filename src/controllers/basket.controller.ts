@@ -5,11 +5,40 @@ import {
   updateBasketItem,
   clearBasket,
   checkout,
+  getBasketById,
 } from '../services/basket.service';
 import { CustomRequest } from '../types/CustomRequest';
 import { Response } from 'express';
 import { updateBasketSchema } from '../validations/updateBasketSchema';
 import { ZodError } from 'zod';
+import { addToBasketSchema } from '../validations/addToBasketSchema';
+
+async function handleGetBasketById(req: CustomRequest, res: Response) {
+  try {
+    const { id } = req.params;
+
+    const basket = await getBasketById(req.userId as string, id);
+
+    console.log(basket);
+    if (!basket) {
+      console.log('Basket not found');
+      return res.status(404).json({
+        message: 'Basket not found.',
+      });
+    }
+
+    res.status(200).json({
+      basket,
+    });
+  } catch (error) {
+    console.error(error);
+    if (error instanceof Error) {
+      res.status(500).json({ message: error.message });
+    }
+
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
 
 async function handleGetBasket(req: CustomRequest, res: Response) {
   try {
@@ -49,12 +78,7 @@ async function handleAddToBasket(req: CustomRequest, res: Response) {
   try {
     const { menuId, title, quantity, price, restaurantId } = req.body;
 
-    if (!menuId || !title || !quantity || !price || !restaurantId) {
-      return res.status(400).json({
-        message:
-          'menuId, title, quantity, price, and restaurantId are required in the request body',
-      });
-    }
+    addToBasketSchema.parse({ menuId, title, quantity, price, restaurantId });
 
     const basket = await addToBasket(
       req.userId as string,
@@ -65,13 +89,28 @@ async function handleAddToBasket(req: CustomRequest, res: Response) {
       restaurantId,
     );
 
-    res.status(200).json({
+    if (!basket) {
+      return res.status(404).json({
+        message:
+          'Basket not found for the given customer and restaurant. Basket might have been cleared.',
+      });
+    }
+
+    res.status(201).json({
       message: 'Menu added to basket successfully',
       basket,
     });
   } catch (error) {
-    console.error(error);
+    // Handle validation errors
+    if (error instanceof ZodError) {
+      const errorMessages = error.errors.map(err => ({
+        field: err.path.join('.'),
+        message: err.message,
+      }));
+      return res.status(400).json({ errors: errorMessages });
+    }
 
+    // Handle database errors
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       switch (error.code) {
         case 'P2002': // Unique constraint failed
@@ -95,10 +134,13 @@ async function handleAddToBasket(req: CustomRequest, res: Response) {
       }
     }
 
+    // Handle unexpected errors
     if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
+      return res.status(500).json({ message: error.message });
     }
-    res.status(500).json({ message: 'Internal Server Error' });
+
+    // Default error response
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 }
 
@@ -190,6 +232,7 @@ async function handleCheckout(req: CustomRequest, res: Response) {
 }
 
 export default {
+  handleGetBasketById,
   handleGetBasket,
   handleAddToBasket,
   handleUpdateBasket,

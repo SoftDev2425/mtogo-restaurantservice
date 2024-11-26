@@ -4,6 +4,22 @@ import { producer } from '../config/kafka.config';
 // gRPC service implementation
 export const restaurantServiceImpl = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getRestaurantDetails: async (call: any, callback: any) => {
+    try {
+      const { id } = call.request;
+      console.log(id);
+      const response = {
+        name: 'Pizza Palace',
+        address: '123 Main Street',
+        rating: 4.5,
+      };
+      callback(null, response);
+    } catch (error) {
+      callback(error, null);
+    }
+  },
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createCategory: async (call: any, callback: any) => {
     try {
       const { title, description } = call.request;
