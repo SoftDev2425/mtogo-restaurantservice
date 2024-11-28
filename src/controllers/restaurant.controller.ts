@@ -337,7 +337,7 @@ async function handleGetRestaurantDetailsByRestaurantId(
   try {
     // Get restaurant details
     const restaurantId = req.params.restaurantId;
-
+    
     // Return restaurant details
     const restaurant = await getRestaurantDetailsByRestaurantId(restaurantId);
 

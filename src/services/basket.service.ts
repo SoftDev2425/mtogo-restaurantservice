@@ -50,6 +50,14 @@ async function addToBasket(
   price: number,
   restaurantId: string,
 ) {
+  const restaurant = await fetch(
+    `${process.env.AUTH_SERVICE_URL}/api/restaurants/${restaurantId}`,
+  );
+
+  if (!restaurant.ok) {
+    throw new Error('Restaurant not found');
+  }
+
   let basket = await prisma.basket.findFirst({
     where: {
       customerId,
