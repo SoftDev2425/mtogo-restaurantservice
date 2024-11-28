@@ -382,8 +382,6 @@ async function getMenuById(menuId: string) {
 }
 
 async function getRestaurantDetailsByRestaurantId(restaurantId: string) {
-  console.log(restaurantId);
-
   const restaurantData = await fetch(
     `${process.env.AUTH_SERVICE_URL}/api/restaurants/${restaurantId}`,
   );
@@ -403,8 +401,6 @@ async function getRestaurantDetailsByRestaurantId(restaurantId: string) {
       };
     };
   };
-
-  console.log('WE GOT RESTAURANT DATA', restaurant);
 
   const categories = await getCategoriesByRestaurantId(restaurantId);
 
