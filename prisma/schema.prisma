@@ -33,7 +33,7 @@ model Categories {
 
 model Menus {
   id          String        @id @default(cuid())
-  title       String        @unique @db.VarChar(255)
+  title       String        @db.VarChar(255)
   price       Float
   description String?       @db.VarChar(255)
   createdAt   DateTime      @default(now())
@@ -42,6 +42,7 @@ model Menus {
   categoryId  String
   BasketItems BasketItems[]
 
+  @@unique([categoryId, title], name: "unique_category_menu")
   @@index([categoryId], name: "category_id_index")
   @@index([price], name: "price_index")
 }

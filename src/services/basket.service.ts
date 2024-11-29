@@ -47,7 +47,6 @@ async function addToBasket(
   menuId: string,
   title: string,
   quantity: number,
-  price: number,
   restaurantId: string,
 ) {
   const restaurant = await fetch(
@@ -56,6 +55,16 @@ async function addToBasket(
 
   if (!restaurant.ok) {
     throw new Error('Restaurant not found');
+  }
+
+  const menu = await prisma.menus.findFirst({
+    where: {
+      id: menuId,
+    },
+  });
+
+  if (!menu) {
+    throw new Error('Menu not found');
   }
 
   let basket = await prisma.basket.findFirst({
@@ -89,7 +98,7 @@ async function addToBasket(
         },
         data: {
           quantity,
-          price,
+          price: menu.price,
         },
       });
     } else {
@@ -110,7 +119,7 @@ async function addToBasket(
         title,
         menuId,
         quantity,
-        price,
+        price: menu.price,
       },
     });
   }

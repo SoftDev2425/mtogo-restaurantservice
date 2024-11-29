@@ -7,7 +7,6 @@ const addToBasketSchema = z.object({
     .number()
     .int()
     .min(0, 'Please enter a valid quantity of 0 or more'),
-  price: z.number().min(1, 'Please enter a valid price of 0 or more'),
   restaurantId: z.string().min(1, 'Please enter a valid restaurant ID'),
 });
 

@@ -76,16 +76,15 @@ async function handleGetBasket(req: CustomRequest, res: Response) {
 
 async function handleAddToBasket(req: CustomRequest, res: Response) {
   try {
-    const { menuId, title, quantity, price, restaurantId } = req.body;
+    const { menuId, title, quantity, restaurantId } = req.body;
 
-    addToBasketSchema.parse({ menuId, title, quantity, price, restaurantId });
+    addToBasketSchema.parse({ menuId, title, quantity, restaurantId });
 
     const basket = await addToBasket(
       req.userId as string,
       menuId,
       title,
       quantity,
-      price,
       restaurantId,
     );
 

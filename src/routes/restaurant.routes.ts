@@ -74,4 +74,6 @@ router.get(
 
 router.get('/menus/:menuId', restaurantController.handleGetMenuById);
 
+// confirm order pickup: POST /restaurant/orders/:orderId/confirm
+
 export default router;
