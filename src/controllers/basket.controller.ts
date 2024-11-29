@@ -2,8 +2,8 @@ import { Prisma } from '@prisma/client';
 import {
   getBasket,
   addToBasket,
-  updateBasketItem,
   clearBasket,
+  updateBasketItem,
   checkout,
   getBasketById,
 } from '../services/basket.service';
@@ -180,15 +180,15 @@ async function handleUpdateBasket(req: CustomRequest, res: Response) {
 
 async function handleClearBasket(req: CustomRequest, res: Response) {
   try {
-    const { restaurantId } = req.body;
+    const { id } = req.params;
 
-    if (!restaurantId) {
+    if (!id) {
       return res.status(400).json({
-        message: 'restaurantId is required in the request body',
+        message: 'Basket ID is required in the request params',
       });
     }
 
-    await clearBasket(req.userId as string, restaurantId as string);
+    await clearBasket(req.userId as string, id as string);
 
     return res.status(200).json({
       message: 'Basket cleared successfully',

@@ -162,11 +162,11 @@ async function updateBasketItem(
   return updatedBasket;
 }
 
-async function clearBasket(customerId: string, restaurantId: string) {
+async function clearBasket(customerId: string, basketId: string) {
   const basket = await prisma.basket.findFirst({
     where: {
+      id: basketId,
       customerId,
-      restaurantId,
     },
   });
 

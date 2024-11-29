@@ -13,7 +13,11 @@ router.post('/', requireCustomer, basketController.handleAddToBasket);
 
 router.put('/', requireCustomer, basketController.handleUpdateBasket);
 
-router.delete('/', requireCustomer, basketController.handleClearBasket);
+router.delete(
+  '/:id/clear',
+  requireCustomer,
+  basketController.handleClearBasket,
+);
 
 router.post(
   '/basket/checkout',
