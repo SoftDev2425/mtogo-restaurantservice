@@ -2,7 +2,7 @@ import { Kafka } from 'kafkajs';
 
 export const kafka = new Kafka({
   clientId: 'mtogo-restaurantservice',
-  brokers: [process.env.KAFKA_BROKER ?? 'kafka:9092'],
+  brokers: [process.env.KAFKA_BROKER || 'kafka:9092'],
 });
 
 export const producer = kafka.producer();
