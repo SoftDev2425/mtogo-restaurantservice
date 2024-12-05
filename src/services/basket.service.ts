@@ -193,10 +193,4 @@ async function clearBasket(customerId: string, basketId: string) {
   ]);
 }
 
-export {
-  getBasketById,
-  getBasket,
-  addToBasket,
-  updateBasketItem,
-  clearBasket,
-};
+export { getBasketById, getBasket, addToBasket, updateBasketItem, clearBasket };
