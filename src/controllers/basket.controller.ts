@@ -4,7 +4,6 @@ import {
   addToBasket,
   clearBasket,
   updateBasketItem,
-  checkout,
   getBasketById,
 } from '../services/basket.service';
 import { CustomRequest } from '../types/CustomRequest';
@@ -210,31 +209,10 @@ async function handleClearBasket(req: CustomRequest, res: Response) {
   }
 }
 
-async function handleCheckout(req: CustomRequest, res: Response) {
-  try {
-    const { restaurantId } = req.body;
-
-    const order = await checkout(req.userId as string, restaurantId);
-
-    res.status(200).json({
-      message: 'Order placed successfully',
-      order,
-    });
-  } catch (error) {
-    console.error(error);
-    if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
-    }
-
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-}
-
 export default {
   handleGetBasketById,
   handleGetBasket,
   handleAddToBasket,
   handleUpdateBasket,
   handleClearBasket,
-  handleCheckout,
 };

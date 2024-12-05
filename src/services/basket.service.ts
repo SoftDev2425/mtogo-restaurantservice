@@ -193,15 +193,10 @@ async function clearBasket(customerId: string, basketId: string) {
   ]);
 }
 
-async function checkout(customerId: string, restaurantId: string) {
-  console.log('Checkout', customerId, restaurantId);
-}
-
 export {
   getBasketById,
   getBasket,
   addToBasket,
   updateBasketItem,
   clearBasket,
-  checkout,
 };

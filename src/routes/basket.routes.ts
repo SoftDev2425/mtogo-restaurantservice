@@ -19,10 +19,4 @@ router.delete(
   basketController.handleClearBasket,
 );
 
-router.post(
-  '/basket/checkout',
-  requireCustomer,
-  basketController.handleCheckout,
-);
-
 export default router;
