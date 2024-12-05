@@ -72,6 +72,11 @@ router.get(
   restaurantController.handleGetRestaurantDetailsByRestaurantId,
 );
 
+router.get(
+  '/categories/:categoryId',
+  restaurantController.handleGetCategoryById,
+);
+
 router.get('/menus/:menuId', restaurantController.handleGetMenuById);
 
 // confirm order pickup: POST /restaurant/orders/:orderId/confirm

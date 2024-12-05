@@ -373,6 +373,14 @@ async function getCategoriesByRestaurantId(restaurantId: string) {
 //   });
 // }
 
+async function getCategoryById(categoryId: string) {
+  return await prisma.categories.findUnique({
+    where: {
+      id: categoryId,
+    },
+  });
+}
+
 async function getMenuById(menuId: string) {
   return await prisma.menus.findUnique({
     where: {
@@ -426,4 +434,5 @@ export {
   getRestaurantDetailsByRestaurantId,
   getCategoriesByRestaurantId,
   getMenuById,
+  getCategoryById,
 };

@@ -8,6 +8,7 @@ import {
   deleteCategory,
   deleteMenu,
   getCategoriesByRestaurantId,
+  getCategoryById,
   getMenuById,
   getMenusByCategoryId,
   getRestaurantDetailsByRestaurantId,
@@ -18,6 +19,7 @@ import {
 import { createMenuSchema } from '../validations/createMenuSchema';
 import { updateCategorySchema } from '../validations/updateCategorySchema';
 import { updateMenuSchema } from '../validations/updateMenuSchema';
+import { Request } from 'express';
 
 async function handleCreateCategory(req: CustomRequest, res: Response) {
   try {
@@ -309,6 +311,25 @@ async function handleDeleteMenu(req: CustomRequest, res: Response) {
 //   }
 // }
 
+async function handleGetCategoryById(req: Request, res: Response) {
+  try {
+    const categoryId = req.params.categoryId;
+
+    const category = await getCategoryById(categoryId);
+
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found.' });
+    }
+
+    return res.status(200).json({
+      category,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
 async function handleGetMenuById(req: CustomRequest, res: Response) {
   try {
     // Get menu details
@@ -365,4 +386,5 @@ export default {
   // handleGetNearbyRestaurants,
   handleGetRestaurantDetailsByRestaurantId,
   handleGetMenuById,
+  handleGetCategoryById,
 };
