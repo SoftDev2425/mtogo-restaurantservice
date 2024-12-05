@@ -66,7 +66,6 @@ router.get(
 // router.get('/nearby', restaurantController.handleGetNearbyRestaurants);
 
 // Get Restaurant Details: GET /restaurants/:restaurantId
-// TODO - FIX THIS
 router.get(
   '/:restaurantId',
   restaurantController.handleGetRestaurantDetailsByRestaurantId,
