@@ -42,11 +42,11 @@ async function handleGetBasketById(req: CustomRequest, res: Response) {
 
 async function handleGetBasket(req: CustomRequest, res: Response) {
   try {
-    const { restaurantId } = req.body;
+    const { restaurantId } = req.query;
 
     if (!restaurantId) {
       return res.status(400).json({
-        message: 'Restaurant ID is required in the request body',
+        message: 'Restaurant ID is required in the query params',
       });
     }
 
