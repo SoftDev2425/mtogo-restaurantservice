@@ -171,7 +171,9 @@ describe('createCategory', () => {
     prisma.categories.count = jest.fn().mockResolvedValue(1); // 1 existing category
     prisma.categories.create = jest
       .fn()
-      .mockRejectedValue(new Error('Unknown error'));
+      .mockRejectedValue(
+        new Error('An unexpected error occured while creating the category.'),
+      );
 
     // Act and Assert
     await expect(
@@ -180,7 +182,9 @@ describe('createCategory', () => {
         mockCategory.description,
         mockCategory.restaurantId,
       ),
-    ).rejects.toThrow('Unknown error');
+    ).rejects.toThrow(
+      'An unexpected error occured while creating the category.',
+    );
     expect(prisma.categories.count).toHaveBeenCalledWith({
       where: {
         restaurantId: mockCategory.restaurantId,

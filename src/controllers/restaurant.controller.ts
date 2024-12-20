@@ -39,11 +39,11 @@ async function handleCreateCategory(req: CustomRequest, res: Response) {
     return res.status(201).json({
       message: 'Category created successfully',
       category: {
-        id: category.id,
-        title: category.title,
-        sortOrder: category.sortOrder,
-        description: category.description,
-        createdAt: category.createdAt,
+        id: category?.id,
+        title: category?.title,
+        sortOrder: category?.sortOrder,
+        description: category?.description,
+        createdAt: category?.createdAt,
       },
     });
   } catch (error) {

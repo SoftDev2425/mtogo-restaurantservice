@@ -1,3 +1,4 @@
+import CategoryBuilder from '../model/category';
 import prisma from '../../prisma/client';
 import { Prisma } from '@prisma/client';
 
@@ -8,26 +9,35 @@ import { Prisma } from '@prisma/client';
  * @param restaurantId
  * @returns created category
  */
+
+const DUPLICATE_KEY_ERROR = 'P2002';
+
+async function calculateSortOrder(restaurantId: string) {
+  return prisma.categories.count({ where: { restaurantId } });
+}
+
 async function createCategory(
   title: string,
   description: string,
   restaurantId: string,
 ) {
+  if (!title || !restaurantId) {
+    throw new Error('Title and restaurant ID are required.');
+  }
   try {
     // calculate sortOrder
-    const categoryCount = await prisma.categories.count({
-      where: {
-        restaurantId,
-      },
-    });
+    const sortOrder = await calculateSortOrder(restaurantId);
+
+    // Builder Pattern used to create data object
+    const categoryData = new CategoryBuilder()
+      .setTitle(title)
+      .setDescription(description)
+      .setRestaurantId(restaurantId)
+      .setSortOrder(sortOrder)
+      .build();
 
     return await prisma.categories.create({
-      data: {
-        title,
-        description: description || '',
-        restaurantId,
-        sortOrder: categoryCount,
-      },
+      data: categoryData,
       select: {
         id: true,
         title: true,
@@ -39,16 +49,18 @@ async function createCategory(
       },
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (
-        error.code === 'P2002' &&
-        (error.meta?.target as string[])?.includes('title')
-      ) {
-        throw new Error('A category with this title already exists.');
-      }
-    }
-    throw error;
+    handleCreateCategoryError(error);
   }
+}
+
+function handleCreateCategoryError(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === DUPLICATE_KEY_ERROR) {
+      throw new Error('A category with this title already exists.');
+    }
+  }
+  console.error('An error occured:', error);
+  throw new Error('An unexpected error occured while creating the category.');
 }
 
 /**
