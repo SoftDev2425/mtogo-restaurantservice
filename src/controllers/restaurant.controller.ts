@@ -84,11 +84,11 @@ async function handleUpdateCategory(req: CustomRequest, res: Response) {
     return res.status(200).json({
       message: 'Category updated successfully',
       category: {
-        id: category.id,
-        title: category.title,
-        description: category.description,
-        sortOrder: category.sortOrder,
-        createdAt: category.createdAt,
+        id: category?.id,
+        title: category?.title,
+        description: category?.description,
+        sortOrder: category?.sortOrder,
+        createdAt: category?.createdAt,
       },
     });
   } catch (error) {

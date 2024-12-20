@@ -436,7 +436,7 @@ describe('Restaurant update category', () => {
       .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'Category not found',
+      message: 'Category not found or does not belong to the restaurant.',
     });
   });
 
@@ -475,6 +475,8 @@ describe('Restaurant update category', () => {
       .send({ sortOrder: 0 })
       .expect(200);
 
+    console.log("RESPONSE:",response2.body);
+
     expect(response2.body.category.sortOrder).toBe(0);
   });
 
@@ -491,7 +493,7 @@ describe('Restaurant update category', () => {
       .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'Category not found',
+      message: 'Category not found or does not belong to the restaurant.',
     });
   });
 });

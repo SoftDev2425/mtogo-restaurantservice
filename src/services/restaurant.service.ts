@@ -2,14 +2,6 @@ import CategoryBuilder from '../model/category';
 import prisma from '../../prisma/client';
 import { Prisma } from '@prisma/client';
 
-/**
- *
- * @param title
- * @param description
- * @param restaurantId
- * @returns created category
- */
-
 const DUPLICATE_KEY_ERROR = 'P2002';
 
 async function calculateSortOrder(restaurantId: string) {
@@ -49,91 +41,121 @@ async function createCategory(
       },
     });
   } catch (error) {
-    handleCreateCategoryError(error);
+    handleCreateCategoryError(error, 'creating');
   }
 }
 
-function handleCreateCategoryError(error: unknown) {
+function handleCreateCategoryError(error: unknown, operation: string) {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    if (error.code === DUPLICATE_KEY_ERROR) {
+    if (error.code === DUPLICATE_KEY_ERROR &&
+      (error.meta?.target as string[])?.includes('title')
+    ) {
       throw new Error('A category with this title already exists.');
     }
   }
-  console.error('An error occured:', error);
-  throw new Error('An unexpected error occured while creating the category.');
+  console.error(`An error occured during ${operation}:`, error);
+  throw new Error(`An unexpected error occured while ${operation} the category.`);
 }
 
 /**
- *
- * @returns all categories
+ * Handles sortOrder adjustment within a transaction
  */
+async function adjustSortOrder(
+  transactionClient: Prisma.TransactionClient,
+  restaurantId: string,
+  currentSortOrder: number,
+  newSortOrder: number,
+) {
+  if (newSortOrder > currentSortOrder) {
+    // Decrement sortOrder for categories between current and new position
+    await transactionClient.categories.updateMany({
+      where: {
+        restaurantId,
+        sortOrder: { gt: currentSortOrder, lte: newSortOrder },
+      },
+      data: { sortOrder: { decrement: 1 } },
+    });
+  } else if (newSortOrder < currentSortOrder) {
+    // Increment sortOrder for categories between new and current position
+    await transactionClient.categories.updateMany({
+      where: {
+        restaurantId,
+        sortOrder: { gte: newSortOrder, lt: currentSortOrder },
+      },
+      data: { sortOrder: { increment: 1 } },
+    });
+  }
+}
 
+/**
+ * Updates a category in the database
+ */
 async function updateCategory(
   categoryId: string,
-  title: string,
-  description: string,
-  sortOrder: number,
+  title: string | undefined,
+  description: string | undefined, // Allow description to be optional
+  sortOrder: number | undefined,
   restaurantId: string,
 ) {
-  try {
-    // validate sortOrder
-    const category = await prisma.categories.findUnique({
+  if (!categoryId || !restaurantId) {
+    throw new Error('Category ID, title, and restaurant ID are required.');
+  }
+
+  const duplicateCategory = await prisma.categories.findFirst({
+    where: {
+      title,
+      restaurantId,
+      NOT: { id: categoryId },
+    },
+  });
+  
+  if (duplicateCategory) {
+    throw new Error('A category with this title already exists.');
+  }
+  // Fetch existing category to preserve optional fields
+  const existingCategory = await prisma.categories.findUnique({
+    where: { id: categoryId },
+  });
+
+  if (!existingCategory || existingCategory.restaurantId !== restaurantId) {
+    throw new Error('Category not found or does not belong to the restaurant.');
+  }
+
+  // Check for duplicate title if title is provided
+  if (title && title !== existingCategory.title) {
+    const duplicateCategory = await prisma.categories.findFirst({
       where: {
-        id: categoryId,
-      },
-      select: {
-        restaurantId: true,
-        sortOrder: true,
+        title,
+        restaurantId,
+        NOT: { id: categoryId },
       },
     });
-
-    if (!category || category.restaurantId !== restaurantId) {
-      throw new Error('Category not found');
+    if (duplicateCategory) {
+      throw new Error('A category with this title already exists.');
     }
+  }
 
-    // Handle sortOrder update if it has changed
-    if (sortOrder !== category.sortOrder) {
-      // const categoryCount = await prisma.categories.count({
-      //   where: { restaurantId },
-      // });
-
-      // if (sortOrder < 0 || sortOrder >= categoryCount) {
-      //   throw new Error('Invalid sortOrder');
-      // }
-
-      // Adjust sortOrder for other categories
-      await prisma.$transaction(async prisma => {
-        if (sortOrder > category.sortOrder) {
-          // Decrement sortOrder for categories between current and new position
-          await prisma.categories.updateMany({
-            where: {
-              restaurantId,
-              sortOrder: { gt: category.sortOrder, lte: sortOrder },
-            },
-            data: { sortOrder: { decrement: 1 } },
-          });
-        } else if (sortOrder < category.sortOrder) {
-          // Increment sortOrder for categories between new and current position
-          await prisma.categories.updateMany({
-            where: {
-              restaurantId,
-              sortOrder: { gte: sortOrder, lt: category.sortOrder },
-            },
-            data: { sortOrder: { increment: 1 } },
-          });
-        }
+  try {
+     // Adjust sortOrder if it has changed
+     if (sortOrder !== undefined && sortOrder !== existingCategory.sortOrder) {
+      await prisma.$transaction(async (tx) => {
+        await adjustSortOrder(tx, restaurantId, existingCategory.sortOrder, sortOrder);
       });
     }
+
+    // Use builder pattern for the data object
+    const categoryData = new CategoryBuilder()
+      .setTitle(title ?? existingCategory.title)
+      .setDescription(description ?? existingCategory.description ?? '')
+      .setSortOrder(sortOrder ?? existingCategory.sortOrder)
+      .setRestaurantId(restaurantId)
+      .build();
 
     return await prisma.categories.update({
       where: {
         id: categoryId,
       },
-      data: {
-        title,
-        description,
-        sortOrder,
-      },
+      data: categoryData,
       select: {
         id: true,
         title: true,
@@ -144,15 +166,7 @@ async function updateCategory(
       },
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (
-        error.code === 'P2002' &&
-        (error.meta?.target as string[])?.includes('title')
-      ) {
-        throw new Error('A category with this title already exists.');
-      }
-    }
-    throw error;
+    handleCreateCategoryError(error, 'updating');
   }
 }
 

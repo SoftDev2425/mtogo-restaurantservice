@@ -237,10 +237,6 @@ describe('updateCategory', () => {
       where: {
         id: mockCategory.id,
       },
-      select: {
-        restaurantId: true,
-        sortOrder: true,
-      },
     });
     expect(prisma.categories.update).toHaveBeenCalledTimes(1);
     expect(prisma.categories.update).toHaveBeenCalledWith({
@@ -251,6 +247,7 @@ describe('updateCategory', () => {
         title: updatedCategory.title,
         description: updatedCategory.description,
         sortOrder: updatedCategory.sortOrder,
+        restaurantId: mockCategory.restaurantId,
       },
       select: {
         id: true,
@@ -340,7 +337,7 @@ describe('updateCategory', () => {
         updatedCategory.sortOrder,
         mockCategory.restaurantId,
       ),
-    ).rejects.toThrow('Category not found');
+    ).rejects.toThrow('Category not found or does not belong to the restaurant.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
   });
 
@@ -367,7 +364,7 @@ describe('updateCategory', () => {
     prisma.categories.findUnique = jest.fn().mockResolvedValue(mockCategory);
     prisma.categories.update = jest
       .fn()
-      .mockRejectedValue(new Error('Unknown error'));
+      .mockRejectedValue(new Error('An unexpected error occured while updating the category.'));
 
     // Act and Assert
     await expect(
@@ -378,7 +375,7 @@ describe('updateCategory', () => {
         updatedCategory.sortOrder,
         mockCategory.restaurantId,
       ),
-    ).rejects.toThrow('Unknown error');
+    ).rejects.toThrow('An unexpected error occured while updating the category.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.categories.update).toHaveBeenCalledTimes(1);
   });
@@ -421,10 +418,6 @@ describe('updateCategory', () => {
       where: {
         id: mockCategory.id,
       },
-      select: {
-        restaurantId: true,
-        sortOrder: true,
-      },
     });
     expect(prisma.categories.update).toHaveBeenCalledTimes(1);
     expect(prisma.categories.update).toHaveBeenCalledWith({
@@ -435,6 +428,7 @@ describe('updateCategory', () => {
         title: updatedCategory.title,
         description: updatedCategory.description,
         sortOrder: updatedCategory.sortOrder,
+        restaurantId: updatedCategory.restaurantId,
       },
       select: {
         id: true,

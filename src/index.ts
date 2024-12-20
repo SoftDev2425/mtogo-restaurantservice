@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import createServer from './utils/server';
 import prisma from '../prisma/client';
 import { consumer } from './config/kafka.config';
-import { startGRPCServer } from './grpc/server';
 
 dotenv.config();
 
@@ -25,7 +24,6 @@ main()
     await prisma.$connect();
     await startKafkaConsumer();
     console.log('Restaurant service is running...');
-    await startGRPCServer();
   })
   .catch(async e => {
     console.error(e);
