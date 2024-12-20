@@ -147,9 +147,7 @@ describe('createCategory', () => {
         mockCategory.description,
         mockCategory.restaurantId,
       ),
-    ).rejects.toThrow(
-      'Could not creating category with this title because title already exists.',
-    );
+    ).rejects.toThrow('Could not complete operation: title already exists.');
     expect(prisma.categories.count).toHaveBeenCalledWith({
       where: {
         restaurantId: mockCategory.restaurantId,
@@ -184,7 +182,7 @@ describe('createCategory', () => {
         mockCategory.description,
         mockCategory.restaurantId,
       ),
-    ).rejects.toThrow('An unexpected error occured while creating category.');
+    ).rejects.toThrow('An unexpected error occurred.');
     expect(prisma.categories.count).toHaveBeenCalledWith({
       where: {
         restaurantId: mockCategory.restaurantId,
@@ -301,9 +299,7 @@ describe('updateCategory', () => {
         updatedCategory.sortOrder,
         mockCategory.restaurantId,
       ),
-    ).rejects.toThrow(
-      'Could not updating category with this title because title already exists.',
-    );
+    ).rejects.toThrow('Could not complete operation: title already exists.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.categories.update).toHaveBeenCalledTimes(1);
   });
@@ -381,7 +377,7 @@ describe('updateCategory', () => {
         updatedCategory.sortOrder,
         mockCategory.restaurantId,
       ),
-    ).rejects.toThrow('An unexpected error occured while updating category.');
+    ).rejects.toThrow('An unexpected error occurred.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.categories.update).toHaveBeenCalledTimes(1);
   });
@@ -771,9 +767,7 @@ describe('createMenu', () => {
         mockCategory.id,
         mockCategory.restaurantId,
       ),
-    ).rejects.toThrow(
-      'Could not creating menu with this title because title already exists.',
-    );
+    ).rejects.toThrow('Could not complete operation: title already exists.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.menus.create).toHaveBeenCalledTimes(1);
   });
@@ -938,9 +932,7 @@ describe('updateMenu', () => {
         100,
         'restaurant1',
       ),
-    ).rejects.toThrow(
-      'Could not updating menu with this title because title already exists.',
-    );
+    ).rejects.toThrow('Could not complete operation: title already exists.');
 
     expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.menus.update).toHaveBeenCalledTimes(1);
@@ -1155,5 +1147,3 @@ describe('getCategoriesByRestaurantId', () => {
     expect(prisma.categories.findMany).toHaveBeenCalledTimes(1);
   });
 });
-
-// describe('getNearbyRestaurants', () => {});

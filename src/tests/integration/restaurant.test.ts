@@ -177,7 +177,7 @@ describe('Restaurant create category', () => {
 
     expect(response.body).toMatchObject({
       message:
-        'Could not creating category with this title because title already exists.',
+        'Could not complete operation: restaurantId, title already exists.',
     });
   });
 

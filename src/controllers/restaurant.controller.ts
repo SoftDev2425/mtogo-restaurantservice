@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { CustomRequest } from '../types/CustomRequest';
 import { createCategorySchema } from '../validations/createCategoryScema';
 import { ZodError } from 'zod';
@@ -12,14 +12,12 @@ import {
   getMenuById,
   getMenusByCategoryId,
   getRestaurantDetailsByRestaurantId,
-  // getRestaurantDetailsByRestaurantId,
   updateCategory,
   updateMenu,
 } from '../services/restaurant.service';
 import { createMenuSchema } from '../validations/createMenuSchema';
 import { updateCategorySchema } from '../validations/updateCategorySchema';
 import { updateMenuSchema } from '../validations/updateMenuSchema';
-import { Request } from 'express';
 
 async function handleCreateCategory(req: CustomRequest, res: Response) {
   try {

@@ -2,6 +2,12 @@ import CategoryBuilder from '../model/category';
 import prisma from '../../prisma/client';
 import { Prisma } from '@prisma/client';
 import sanitizeHtml from 'sanitize-html';
+import PrismaQueryFactory from '../factories/PrismaQueryFactory';
+import {
+  DefaultErrorHandler,
+  DuplicateKeyErrorHandler,
+  ErrorHandlerStrategy,
+} from '../strategies/ErrorHandlerStrategy';
 
 const DUPLICATE_KEY_ERROR = 'P2002';
 
@@ -10,19 +16,21 @@ async function calculateSortOrder(restaurantId: string) {
   return prisma.categories.count({ where: { restaurantId } });
 }
 
-function handlePrismaError(error: unknown, operation: string) {
+function handlePrismaError(error: unknown) {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    if (
-      error.code === DUPLICATE_KEY_ERROR &&
-      (error.meta?.target as string[])?.includes('title')
-    ) {
-      throw new Error(
-        `Could not ${operation} with this title because title already exists.`,
-      );
-    }
+    const errorHandler = getErrorHandlerStrategy(error.code);
+    errorHandler.handle(error);
+  } else {
+    new DefaultErrorHandler().handle(error);
   }
-  console.error(`An error occured during ${operation}:`, error);
-  throw new Error(`An unexpected error occured while ${operation}.`);
+}
+
+function getErrorHandlerStrategy(code: string): ErrorHandlerStrategy {
+  const strategies: { [key: string]: ErrorHandlerStrategy } = {
+    [DUPLICATE_KEY_ERROR]: new DuplicateKeyErrorHandler(),
+  };
+
+  return strategies[code] || new DefaultErrorHandler();
 }
 
 async function fetchCategory(categoryId: string, restaurantId: string) {
@@ -119,7 +127,7 @@ async function createCategory(
       },
     });
   } catch (error) {
-    handlePrismaError(error, 'creating category');
+    handlePrismaError(error);
   }
 }
 
@@ -189,7 +197,7 @@ async function updateCategory(
       },
     });
   } catch (error) {
-    handlePrismaError(error, 'updating category');
+    handlePrismaError(error);
   }
 }
 
@@ -232,7 +240,7 @@ async function createMenu(
       },
     });
   } catch (error) {
-    handlePrismaError(error, 'creating menu');
+    handlePrismaError(error);
   }
 }
 
@@ -259,7 +267,7 @@ async function updateMenu(
       },
     });
   } catch (error) {
-    handlePrismaError(error, 'updating menu');
+    handlePrismaError(error);
   }
 }
 
@@ -270,31 +278,19 @@ async function deleteMenu(menuId: string, restaurantId: string) {
 
 /** Query Functions */
 async function getMenusByCategoryId(categoryId: string) {
-  return prisma.menus.findMany({ where: { categoryId } });
+  return PrismaQueryFactory.getMenusByCategoryId(categoryId);
 }
 
 async function getCategoriesByRestaurantId(restaurantId: string) {
-  return prisma.categories.findMany({
-    where: { restaurantId },
-    orderBy: { sortOrder: 'asc' },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      restaurantId: true,
-      sortOrder: true,
-      createdAt: true,
-      menus: true,
-    },
-  });
+  return PrismaQueryFactory.getCategoriesByRestaurantId(restaurantId);
 }
 
 async function getCategoryById(categoryId: string) {
-  return prisma.categories.findUnique({ where: { id: categoryId } });
+  return PrismaQueryFactory.getCategoryById(categoryId);
 }
 
 async function getMenuById(menuId: string) {
-  return prisma.menus.findUnique({ where: { id: menuId } });
+  return PrismaQueryFactory.getMenuById(menuId);
 }
 
 async function getRestaurantDetailsByRestaurantId(restaurantId: string) {
