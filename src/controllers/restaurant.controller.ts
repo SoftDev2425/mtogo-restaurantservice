@@ -144,11 +144,11 @@ async function handleCreateMenu(req: CustomRequest, res: Response) {
     return res.status(201).json({
       message: 'Menu created successfully',
       menu: {
-        id: menu.id,
-        title: menu.title,
-        description: menu.description,
-        price: menu.price,
-        createdAt: menu.createdAt,
+        id: menu?.id,
+        title: menu?.title,
+        description: menu?.description,
+        price: menu?.price,
+        createdAt: menu?.createdAt,
       },
     });
   } catch (error) {
@@ -215,11 +215,11 @@ async function handleUpdateMenu(req: CustomRequest, res: Response) {
     return res.status(200).json({
       message: 'Menu updated successfully',
       menu: {
-        id: menu.id,
-        title: menu.title,
-        description: menu.description,
-        price: menu.price,
-        createdAt: menu.createdAt,
+        id: menu?.id,
+        title: menu?.title,
+        description: menu?.description,
+        price: menu?.price,
+        createdAt: menu?.createdAt,
       },
     });
   } catch (error) {
@@ -270,46 +270,6 @@ async function handleDeleteMenu(req: CustomRequest, res: Response) {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 }
-
-// async function handleGetNearbyRestaurants(req: CustomRequest, res: Response) {
-//   try {
-//     const { city, zipCode } = req.query;
-
-//     if (!city || !zipCode) {
-//       return res
-//         .status(400)
-//         .json({
-//           message: 'City and zip code are required as query parameters',
-//         });
-//     }
-
-//     const restaurants = await getNearbyRestaurants(city as string, zipCode as string);
-
-//     return res.status(200).json({
-//       restaurants,
-//     });
-//   } catch (error) {}
-// }
-
-// async function handleGetRestaurantDetailsByRestaurantId(
-//   req: CustomRequest,
-//   res: Response,
-// ) {
-//   try {
-//     // Get restaurant details
-//     const restaurantId = req.params.restaurantId;
-
-//     // Return restaurant details
-//     const restaurant = await getRestaurantDetailsByRestaurantId(restaurantId);
-
-//     return res.status(200).json({
-//       restaurant,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Internal Server Error' });
-//   }
-// }
 
 async function handleGetCategoryById(req: Request, res: Response) {
   try {
@@ -383,7 +343,6 @@ export default {
   handleUpdateMenu,
   handleGetCategoriesByRestaurantId,
   handleDeleteMenu,
-  // handleGetNearbyRestaurants,
   handleGetRestaurantDetailsByRestaurantId,
   handleGetMenuById,
   handleGetCategoryById,
