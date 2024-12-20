@@ -32,6 +32,7 @@
     "mtogo-proto-provider": "^1.0.9",
     "node-fetch": "^3.3.2",
     "pg": "^8.13.0",
+    "sanitize-html": "^2.14.0",
     "winston": "^3.17.0",
     "zod": "^3.23.8"
   },
@@ -46,6 +47,7 @@
     "@types/fast-levenshtein": "^0.0.4",
     "@types/jest": "^29.5.14",
     "@types/pg": "^8.11.10",
+    "@types/sanitize-html": "^2.13.0",
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^8.9.0",
     "@typescript-eslint/parser": "^8.9.0",

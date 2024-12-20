@@ -1,6 +1,7 @@
 import CategoryBuilder from '../model/category';
 import prisma from '../../prisma/client';
 import { Prisma } from '@prisma/client';
+import sanitizeHtml from 'sanitize-html';
 
 const DUPLICATE_KEY_ERROR = 'P2002';
 
@@ -84,6 +85,18 @@ async function createCategory(
   if (!title || !restaurantId) {
     throw new Error('Title and restaurant ID are required.');
   }
+
+  // Default undefined description to an empty string and sanitize
+  description = sanitizeHtml((description ?? '').trim(), {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
+
+  title = sanitizeHtml(title.trim(), {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
+
   try {
     const sortOrder = await calculateSortOrder(restaurantId);
     const categoryData = new CategoryBuilder()
@@ -120,6 +133,18 @@ async function updateCategory(
   if (!categoryId || !restaurantId) {
     throw new Error('Category ID and restaurant ID are required.');
   }
+
+  // Sanitize inputs
+  if (title)
+    title = sanitizeHtml(title.trim(), {
+      allowedTags: [],
+      allowedAttributes: {},
+    });
+  if (description)
+    description = sanitizeHtml(description.trim(), {
+      allowedTags: [],
+      allowedAttributes: {},
+    });
 
   const existingCategory = await fetchCategory(categoryId, restaurantId);
 
@@ -182,6 +207,20 @@ async function createMenu(
   restaurantId: string,
 ) {
   const category = await fetchCategory(categoryId, restaurantId);
+
+  // Sanitize inputs
+  title = sanitizeHtml(title.trim(), {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
+  description = sanitizeHtml(description.trim(), {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
+
+  if (price <= 0) {
+    throw new Error('Price must be a positive number.');
+  }
 
   try {
     return await prisma.menus.create({
@@ -279,15 +318,25 @@ async function getRestaurantDetailsByRestaurantId(restaurantId: string) {
     };
   };
 
+  // Sanitize external API response
+  const sanitizedRestaurant = {
+    id: sanitizeHtml(restaurant.restaurant.id),
+    name: sanitizeHtml(restaurant.restaurant.name),
+    email: sanitizeHtml(restaurant.restaurant.email),
+    phone: sanitizeHtml(restaurant.restaurant.phone),
+    createdAt: restaurant.restaurant.createdAt, // Date field doesn't require sanitization
+    address: {
+      street: sanitizeHtml(restaurant.restaurant.address.street),
+      city: sanitizeHtml(restaurant.restaurant.address.city),
+      state: sanitizeHtml(restaurant.restaurant.address.state),
+      zip: sanitizeHtml(restaurant.restaurant.address.zip),
+    },
+  };
+
   const categories = await getCategoriesByRestaurantId(restaurantId);
 
   return {
-    id: restaurant.restaurant.id,
-    name: restaurant.restaurant.name,
-    email: restaurant.restaurant.email,
-    phone: restaurant.restaurant.phone,
-    createdAt: restaurant.restaurant.createdAt,
-    address: restaurant.restaurant.address,
+    ...sanitizedRestaurant,
     categories,
   };
 }
