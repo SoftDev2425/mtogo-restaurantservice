@@ -1,6 +1,7 @@
 import { Response, Request } from 'express';
 import { CustomRequest } from '../types/CustomRequest';
 import { ZodError } from 'zod';
+import validator from 'validator';
 import {
   createCategory,
   createMenu,
@@ -45,16 +46,36 @@ function successResponse(
   return res.status(statusCode).json({ message, ...data });
 }
 
+// Helper: Sanitize input
+function sanitizeInput(input: string): string {
+  console.log('I am here:', input);
+
+  return validator.escape(input); // Escapes HTML and SQL special characters
+}
+
+// Helper: Validate CUID
+function isCuid(value: string): boolean {
+  const cuidRegex = /^c[0-9a-zA-Z_-]{24}$/; // Matches CUID format
+  return typeof value === 'string' && cuidRegex.test(value);
+}
+
 // Controller Methods
 async function handleCreateCategory(req: CustomRequest, res: Response) {
   try {
     const { title, description } = req.body;
 
-    createCategorySchema.parse({ title, description });
+    const sanitizedTitle = sanitizeInput(title);
+    const sanitizedDescription =
+      description !== undefined ? sanitizeInput(description) : description;
+
+    createCategorySchema.parse({
+      title: sanitizedTitle,
+      description: sanitizedDescription,
+    });
 
     const category = await createCategory(
-      title,
-      description,
+      sanitizedTitle,
+      sanitizedDescription,
       req.userId as string,
     );
 
@@ -77,13 +98,26 @@ async function handleUpdateCategory(req: CustomRequest, res: Response) {
     const { categoryId } = req.params;
     const { title, description, sortOrder } = req.body;
 
-    updateCategorySchema.parse({ title, description, sortOrder });
+    if (!isCuid(categoryId)) {
+      return res.status(400).json({ message: 'Invalid categoryId format.' });
+    }
+
+    const sanitizedTitle = title !== undefined ? sanitizeInput(title) : title;
+    const sanitizedDescription =
+      description !== undefined ? sanitizeInput(description) : description;
+    const sanitizedSortOrder = sortOrder !== undefined ? sortOrder : undefined;
+
+    updateCategorySchema.parse({
+      title: sanitizedTitle,
+      description: sanitizedDescription,
+      sortOrder: sanitizedSortOrder,
+    });
 
     const category = await updateCategory(
       categoryId,
-      title,
-      description,
-      sortOrder,
+      sanitizedTitle,
+      sanitizedDescription,
+      sanitizedSortOrder,
       req.userId as string,
     );
 
@@ -103,7 +137,13 @@ async function handleUpdateCategory(req: CustomRequest, res: Response) {
 
 async function handleDeleteCategory(req: CustomRequest, res: Response) {
   try {
-    await deleteCategory(req.params.categoryId, req.userId as string);
+    const { categoryId } = req.params;
+
+    if (!isCuid(categoryId)) {
+      return res.status(400).json({ message: 'Invalid categoryId format.' });
+    }
+
+    await deleteCategory(categoryId, req.userId as string);
 
     return successResponse(res, 200, 'Category deleted successfully', {});
   } catch (error) {
@@ -116,11 +156,18 @@ async function handleCreateMenu(req: CustomRequest, res: Response) {
     const { categoryId } = req.params;
     const { title, description, price } = req.body;
 
+    if (!isCuid(categoryId)) {
+      return res.status(400).json({ message: 'Invalid categoryId format.' });
+    }
+
     createMenuSchema.parse({ title, description, price });
 
+    const sanitizedTitle = sanitizeInput(title);
+    const sanitizedDescription = sanitizeInput(description);
+
     const menu = await createMenu(
-      title,
-      description,
+      sanitizedTitle,
+      sanitizedDescription,
       price,
       categoryId,
       req.userId as string,
@@ -143,6 +190,11 @@ async function handleCreateMenu(req: CustomRequest, res: Response) {
 async function handleGetMenusByCategory(req: CustomRequest, res: Response) {
   try {
     const { categoryId } = req.params;
+
+    if (!isCuid(categoryId)) {
+      return res.status(400).json({ message: 'Invalid categoryId format.' });
+    }
+
     const menus = await getMenusByCategoryId(categoryId);
 
     if (!menus || menus.length === 0) {
@@ -168,12 +220,20 @@ async function handleUpdateMenu(req: CustomRequest, res: Response) {
     const { menuId } = req.params;
     const { title, description, price } = req.body;
 
+    if (!isCuid(menuId)) {
+      return res.status(400).json({ message: 'Invalid menuId format.' });
+    }
+
     updateMenuSchema.parse({ title, description, price });
+
+    const sanitizedTitle = sanitizeInput(title);
+
+    const sanitizedDescription = sanitizeInput(description);
 
     const menu = await updateMenu(
       menuId,
-      title,
-      description,
+      sanitizedTitle,
+      sanitizedDescription,
       price,
       req.userId as string,
     );
@@ -197,9 +257,13 @@ async function handleGetCategoriesByRestaurantId(
   res: Response,
 ) {
   try {
-    const categories = await getCategoriesByRestaurantId(
-      req.params.restaurantId,
-    );
+    const { restaurantId } = req.params;
+
+    if (!isCuid(restaurantId)) {
+      return res.status(400).json({ message: 'Invalid restaurantId format.' });
+    }
+
+    const categories = await getCategoriesByRestaurantId(restaurantId);
 
     return successResponse(res, 200, 'Categories retrieved successfully', {
       categories,
@@ -211,7 +275,13 @@ async function handleGetCategoriesByRestaurantId(
 
 async function handleDeleteMenu(req: CustomRequest, res: Response) {
   try {
-    await deleteMenu(req.params.menuId, req.userId as string);
+    const { menuId } = req.params;
+
+    if (!isCuid(menuId)) {
+      return res.status(400).json({ message: 'Invalid menuId format.' });
+    }
+
+    await deleteMenu(menuId, req.userId as string);
 
     return successResponse(res, 200, 'Menu deleted successfully', {});
   } catch (error) {
@@ -221,7 +291,11 @@ async function handleDeleteMenu(req: CustomRequest, res: Response) {
 
 async function handleGetCategoryById(req: Request, res: Response) {
   try {
-    const categoryId = req.params.categoryId;
+    const { categoryId } = req.params;
+
+    if (!isCuid(categoryId)) {
+      return res.status(400).json({ message: 'Invalid categoryId format.' });
+    }
 
     const category = await getCategoryById(categoryId);
 
@@ -241,6 +315,10 @@ async function handleGetMenuById(req: CustomRequest, res: Response) {
   try {
     // Get menu details
     const menuId = req.params.menuId;
+
+    if (!isCuid(menuId)) {
+      return res.status(400).json({ message: 'Invalid menuId format.' });
+    }
 
     // Return menu details
     const menu = await getMenuById(menuId);
@@ -263,7 +341,11 @@ async function handleGetRestaurantDetailsByRestaurantId(
 ) {
   try {
     // Get restaurant details
-    const restaurantId = req.params.restaurantId;
+    const { restaurantId } = req.params;
+
+    if (!isCuid(restaurantId)) {
+      return res.status(400).json({ message: 'Invalid restaurantId format.' });
+    }
 
     // Return restaurant details
     const restaurant = await getRestaurantDetailsByRestaurantId(restaurantId);
