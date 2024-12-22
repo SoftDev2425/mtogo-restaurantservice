@@ -19,6 +19,7 @@ import { createCategorySchema } from '../validations/createCategoryScema';
 import { createMenuSchema } from '../validations/createMenuSchema';
 import { updateCategorySchema } from '../validations/updateCategorySchema';
 import { updateMenuSchema } from '../validations/updateMenuSchema';
+import controllerWorkflow from '../templateMethods/controllerWorkflow';
 
 // Helper: Common error handler
 function handleError(error: unknown, res: Response) {
@@ -61,36 +62,49 @@ function isCuid(value: string): boolean {
 
 // Controller Methods
 async function handleCreateCategory(req: CustomRequest, res: Response) {
-  try {
-    const { title, description } = req.body;
-
-    const sanitizedTitle = sanitizeInput(title);
-    const sanitizedDescription =
-      description !== undefined ? sanitizeInput(description) : description;
-
-    createCategorySchema.parse({
-      title: sanitizedTitle,
-      description: sanitizedDescription,
-    });
-
-    const category = await createCategory(
-      sanitizedTitle,
-      sanitizedDescription,
-      req.userId as string,
-    );
-
-    return successResponse(res, 201, 'Category created successfully', {
+  return controllerWorkflow<
+    { title: string; description?: string }, // Input type
+    {
       category: {
-        id: category?.id,
-        title: category?.title,
-        sortOrder: category?.sortOrder,
-        description: category?.description,
-        createdAt: category?.createdAt,
-      },
-    });
-  } catch (error) {
-    handleError(error, res);
-  }
+        id: string;
+        title: string;
+        description?: string;
+        sortOrder: number;
+        createdAt: Date;
+      };
+    } // Output type
+  >(req, res, {
+    validateSchema: createCategorySchema.parse,
+    sanitize: data => ({
+      title: sanitizeInput(data.title),
+      description: data.description
+        ? sanitizeInput(data.description)
+        : undefined,
+    }),
+    serviceCall: async data => {
+      const category = await createCategory(
+        data.title,
+        req.userId as string,
+        data.description,
+      );
+
+      if (!category) {
+        throw new Error('Category creation failed.');
+      }
+
+      return {
+        category: {
+          id: category.id,
+          title: category.title,
+          description: category.description ?? undefined,
+          sortOrder: category.sortOrder,
+          createdAt: category.createdAt,
+        },
+      };
+    },
+    successMessage: 'Category created successfully',
+    successStatusCode: 201,
+  });
 }
 
 async function handleUpdateCategory(req: CustomRequest, res: Response) {

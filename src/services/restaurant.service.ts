@@ -87,8 +87,8 @@ async function adjustSortOrder(
 /** Category Management */
 async function createCategory(
   title: string,
-  description: string,
   restaurantId: string,
+  description?: string,
 ) {
   if (!title || !restaurantId) {
     throw new Error('Title and restaurant ID are required.');

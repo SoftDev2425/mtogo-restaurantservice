@@ -35,8 +35,8 @@ describe('createCategory', () => {
     // Act
     const newCategory = await createCategory(
       mockCategory.title,
-      mockCategory.description,
       mockCategory.restaurantId,
+      mockCategory.description,
     );
 
     // Assert
@@ -85,8 +85,8 @@ describe('createCategory', () => {
     // Act
     const newCategory = await createCategory(
       mockCategory.title,
-      mockCategory.description,
       mockCategory.restaurantId,
+      mockCategory.description,
     );
 
     // Assert
@@ -144,8 +144,8 @@ describe('createCategory', () => {
     await expect(
       createCategory(
         mockCategory.title,
-        mockCategory.description,
         mockCategory.restaurantId,
+        mockCategory.description,
       ),
     ).rejects.toThrow('Could not complete operation: title already exists.');
     expect(prisma.categories.count).toHaveBeenCalledWith({
@@ -179,8 +179,8 @@ describe('createCategory', () => {
     await expect(
       createCategory(
         mockCategory.title,
-        mockCategory.description,
         mockCategory.restaurantId,
+        mockCategory.description,
       ),
     ).rejects.toThrow('An unexpected error occurred.');
     expect(prisma.categories.count).toHaveBeenCalledWith({
