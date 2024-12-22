@@ -28,10 +28,15 @@ function successResponse(
   return res.status(statusCode).json({ message, ...data });
 }
 
-export default async function controllerWorkflow<T, R extends object>(
+export default async function controllerWorkflow<
+  T,
+  R extends object,
+  P = Record<string, string>,
+>(
   req: CustomRequest,
   res: Response,
   options: {
+    validateParams?: (params: P) => void;
     validateSchema?: (data: T) => void;
     sanitize?: (data: T) => T;
     serviceCall: (data: T) => Promise<R>;
@@ -40,20 +45,25 @@ export default async function controllerWorkflow<T, R extends object>(
   },
 ) {
   try {
-    // Step 1: Validation
+    // Step 1: Validate route parameters (if provided)
+    if (options.validateParams) {
+      options.validateParams(req.params as P);
+    }
+
+    // Step 2: Validate request body schema (if provided)
     if (options.validateSchema) {
       options.validateSchema(req.body as T);
     }
 
-    // Step 2: Sanitization
+    // Step 3: Sanitize input data
     const sanitizedData: T = options.sanitize
       ? options.sanitize(req.body as T)
       : (req.body as T);
 
-    // Step 3: Service Call
+    // Step 4: Call the service
     const result: R = await options.serviceCall(sanitizedData);
 
-    // Step 4: Success Response
+    // Step 5: Return a success response
     return successResponse(
       res,
       options.successStatusCode ?? 200,

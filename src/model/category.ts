@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 
 export default class CategoryBuilder {
-  private data: Prisma.CategoriesCreateInput = {
+  readonly data: Prisma.CategoriesCreateInput = {
     title: '',
     description: '',
     restaurantId: '',
@@ -13,8 +13,8 @@ export default class CategoryBuilder {
     return this;
   }
 
-  setDescription(description: string): this {
-    this.data.description = description || '';
+  setDescription(description: string | null): this {
+    this.data.description = description ?? '';
     return this;
   }
 

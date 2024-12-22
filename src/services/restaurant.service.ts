@@ -133,10 +133,10 @@ async function createCategory(
 
 async function updateCategory(
   categoryId: string,
-  title: string,
-  description: string,
-  sortOrder: number,
   restaurantId: string,
+  title?: string,
+  description?: string,
+  sortOrder?: number,
 ) {
   if (!categoryId || !restaurantId) {
     throw new Error('Category ID and restaurant ID are required.');

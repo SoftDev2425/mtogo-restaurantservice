@@ -223,10 +223,10 @@ describe('updateCategory', () => {
     // Act
     const newCategory = await updateCategory(
       mockCategory.id,
+      mockCategory.restaurantId,
       updatedCategory.title,
       updatedCategory.description,
       updatedCategory.sortOrder,
-      mockCategory.restaurantId,
     );
 
     // Assert
@@ -294,10 +294,10 @@ describe('updateCategory', () => {
     await expect(
       updateCategory(
         mockCategory.id,
+        mockCategory.restaurantId,
         updatedCategory.title,
         updatedCategory.description,
         updatedCategory.sortOrder,
-        mockCategory.restaurantId,
       ),
     ).rejects.toThrow('Could not complete operation: title already exists.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
@@ -330,10 +330,10 @@ describe('updateCategory', () => {
     await expect(
       updateCategory(
         mockCategory.id,
+        mockCategory.restaurantId,
         updatedCategory.title,
         updatedCategory.description,
         updatedCategory.sortOrder,
-        mockCategory.restaurantId,
       ),
     ).rejects.toThrow(
       'Category not found or does not belong to the restaurant.',
@@ -372,10 +372,10 @@ describe('updateCategory', () => {
     await expect(
       updateCategory(
         mockCategory.id,
+        mockCategory.restaurantId,
         updatedCategory.title,
         updatedCategory.description,
         updatedCategory.sortOrder,
-        mockCategory.restaurantId,
       ),
     ).rejects.toThrow('An unexpected error occurred.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
@@ -408,10 +408,10 @@ describe('updateCategory', () => {
     // Act
     const newCategory = await updateCategory(
       mockCategory.id,
+      mockCategory.restaurantId,
       updatedCategory.title,
       updatedCategory.description,
       updatedCategory.sortOrder,
-      mockCategory.restaurantId,
     );
 
     // Assert

@@ -495,7 +495,7 @@ describe('Restaurant update category', () => {
       .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'Invalid categoryId format.',
+      message: 'Unexpected error.',
     });
   });
 });

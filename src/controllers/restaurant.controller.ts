@@ -108,45 +108,57 @@ async function handleCreateCategory(req: CustomRequest, res: Response) {
 }
 
 async function handleUpdateCategory(req: CustomRequest, res: Response) {
-  try {
-    const { categoryId } = req.params;
-    const { title, description, sortOrder } = req.body;
-
-    if (!isCuid(categoryId)) {
-      return res.status(400).json({ message: 'Invalid categoryId format.' });
-    }
-
-    const sanitizedTitle = title !== undefined ? sanitizeInput(title) : title;
-    const sanitizedDescription =
-      description !== undefined ? sanitizeInput(description) : description;
-    const sanitizedSortOrder = sortOrder !== undefined ? sortOrder : undefined;
-
-    updateCategorySchema.parse({
-      title: sanitizedTitle,
-      description: sanitizedDescription,
-      sortOrder: sanitizedSortOrder,
-    });
-
-    const category = await updateCategory(
-      categoryId,
-      sanitizedTitle,
-      sanitizedDescription,
-      sanitizedSortOrder,
-      req.userId as string,
-    );
-
-    return successResponse(res, 200, 'Category updated successfully', {
+  return controllerWorkflow<
+    { title?: string; description?: string; sortOrder?: number }, // Input type
+    {
       category: {
-        id: category?.id,
-        title: category?.title,
-        description: category?.description,
-        sortOrder: category?.sortOrder,
-        createdAt: category?.createdAt,
-      },
-    });
-  } catch (error) {
-    handleError(error, res);
-  }
+        id: string;
+        title: string;
+        description?: string;
+        sortOrder: number;
+        createdAt: Date;
+      };
+    } // Output type
+  >(req, res, {
+    validateParams: params => {
+      if (!isCuid(params.categoryId)) {
+        throw new Error('Unexpected error.');
+      }
+    },
+    validateSchema: updateCategorySchema.parse,
+    sanitize: data => ({
+      title: data.title ? sanitizeInput(data.title) : undefined,
+      description: data.description
+        ? sanitizeInput(data.description)
+        : undefined,
+      sortOrder: data.sortOrder,
+    }),
+    serviceCall: async data => {
+      const category = await updateCategory(
+        req.params.categoryId,
+        req.userId as string,
+        data.title,
+        data.description,
+        data.sortOrder,
+      );
+
+      if (!category) {
+        throw new Error('Category update failed.');
+      }
+
+      return {
+        category: {
+          id: category.id,
+          title: category.title,
+          description: category.description ?? undefined,
+          sortOrder: category.sortOrder,
+          createdAt: category.createdAt,
+        },
+      };
+    },
+    successMessage: 'Category updated successfully',
+    successStatusCode: 200,
+  });
 }
 
 async function handleDeleteCategory(req: CustomRequest, res: Response) {
