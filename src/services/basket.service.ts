@@ -12,7 +12,7 @@ async function getBasketById(customerId: string, basketId: string) {
   });
 }
 
-async function getBasket(customerId: string, restaurantId: string) {
+async function getBasket(customerId: string, restaurantId: string) {  
   const basket = await prisma.basket.findFirst({
     where: {
       customerId,

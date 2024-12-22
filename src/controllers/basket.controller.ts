@@ -18,9 +18,7 @@ async function handleGetBasketById(req: CustomRequest, res: Response) {
 
     const basket = await getBasketById(req.userId as string, id);
 
-    console.log(basket);
     if (!basket) {
-      console.log('Basket not found');
       return res.status(404).json({
         message: 'Basket not found.',
       });
@@ -100,6 +98,7 @@ async function handleAddToBasket(req: CustomRequest, res: Response) {
     });
   } catch (error) {
     // Handle validation errors
+    console.log(error);
     if (error instanceof ZodError) {
       const errorMessages = error.errors.map(err => ({
         field: err.path.join('.'),

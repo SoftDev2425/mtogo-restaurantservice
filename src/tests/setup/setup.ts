@@ -13,6 +13,7 @@ global.beforeEach(async () => {
   await prisma.$transaction([
     prisma.categories.deleteMany(),
     prisma.menus.deleteMany(),
+    prisma.basket.deleteMany()
   ]);
 });
 
