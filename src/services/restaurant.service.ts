@@ -209,10 +209,10 @@ async function deleteCategory(categoryId: string, restaurantId: string) {
 /** Menu Management */
 async function createMenu(
   title: string,
-  description: string,
   price: number,
   categoryId: string,
   restaurantId: string,
+  description?: string,
 ) {
   const category = await fetchCategory(categoryId, restaurantId);
 
@@ -221,10 +221,13 @@ async function createMenu(
     allowedTags: [],
     allowedAttributes: {},
   });
-  description = sanitizeHtml(description.trim(), {
-    allowedTags: [],
-    allowedAttributes: {},
-  });
+
+  if (description) {
+    description = sanitizeHtml(description.trim(), {
+      allowedTags: [],
+      allowedAttributes: {},
+    });
+  }
 
   if (price <= 0) {
     throw new Error('Price must be a positive number.');
@@ -246,10 +249,10 @@ async function createMenu(
 
 async function updateMenu(
   menuId: string,
-  title: string,
-  description: string,
-  price: number,
   restaurantId: string,
+  title?: string,
+  description?: string,
+  price?: number,
 ) {
   await fetchMenu(menuId, restaurantId);
 

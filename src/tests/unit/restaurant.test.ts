@@ -577,10 +577,10 @@ describe('createMenu', () => {
     // Act
     const newMenu = await createMenu(
       mockMenu.title,
-      mockMenu.description,
       mockMenu.price,
       mockCategory.id,
       mockCategory.restaurantId,
+      mockMenu.description,
     );
 
     // Assert
@@ -635,10 +635,10 @@ describe('createMenu', () => {
     await expect(
       createMenu(
         mockMenu.title,
-        mockMenu.description,
         mockMenu.price,
         mockCategory.id,
         mockCategory.restaurantId,
+        mockMenu.description,
       ),
     ).rejects.toThrow('Category not found');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
@@ -676,10 +676,10 @@ describe('createMenu', () => {
     await expect(
       createMenu(
         mockMenu.title,
-        mockMenu.description,
         mockMenu.price,
         mockCategory.id,
         mockCategory.restaurantId,
+        mockMenu.description,
       ),
     ).rejects.toThrow('Category not found');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
@@ -716,10 +716,10 @@ describe('createMenu', () => {
     await expect(
       createMenu(
         mockMenu.title,
-        mockMenu.description,
         mockMenu.price,
         mockCategory.id,
         mockCategory.restaurantId,
+        mockMenu.description,
       ),
     ).rejects.toThrow('Unknown error');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
@@ -762,10 +762,10 @@ describe('createMenu', () => {
     await expect(
       createMenu(
         mockMenu.title,
-        mockMenu.description,
         mockMenu.price,
         mockCategory.id,
         mockCategory.restaurantId,
+        mockMenu.description,
       ),
     ).rejects.toThrow('Could not complete operation: title already exists.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
@@ -799,10 +799,10 @@ describe('updateMenu', () => {
 
     const updatedMenu = await updateMenu(
       mockMenu.id,
+      'restaurant1',
       'Updated Menu',
       'Updated Description',
       120,
-      'restaurant1',
     );
 
     expect(updatedMenu).toMatchObject({
@@ -821,10 +821,10 @@ describe('updateMenu', () => {
     await expect(
       updateMenu(
         'menu1',
+        'restaurant1',
         'Updated Menu',
         'Updated Description',
         120,
-        'restaurant1',
       ),
     ).rejects.toThrow('Menu not found or does not belong to the restaurant.');
 
@@ -847,10 +847,10 @@ describe('updateMenu', () => {
     await expect(
       updateMenu(
         'menu1',
+        'restaurant1',
         'Updated Menu',
         'Updated Description',
         120,
-        'restaurant1',
       ),
     ).rejects.toThrow('Menu not found or does not belong to the restaurant.');
 
@@ -883,10 +883,10 @@ describe('updateMenu', () => {
 
     const updatedMenu = await updateMenu(
       mockMenu.id,
+      'restaurant1',
       'Original Menu',
       'Original Description',
       100,
-      'restaurant1',
     );
 
     expect(updatedMenu).toMatchObject({
@@ -927,10 +927,10 @@ describe('updateMenu', () => {
     await expect(
       updateMenu(
         'menu1',
+        'restaurant1',
         'Original Menu',
         'Original Description',
         100,
-        'restaurant1',
       ),
     ).rejects.toThrow('Could not complete operation: title already exists.');
 
