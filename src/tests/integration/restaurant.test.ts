@@ -791,6 +791,10 @@ describe('Create menu', () => {
         },
         {
           field: 'price',
+          message: 'Number must be greater than 0',
+        },
+        {
+          field: 'price',
           message: 'Please enter a valid price',
         },
       ],
@@ -967,6 +971,10 @@ describe('Update menu', () => {
         {
           field: 'description',
           message: 'Please enter a valid description',
+        },
+        {
+          field: 'price',
+          message: 'Number must be greater than 0',
         },
         {
           field: 'price',

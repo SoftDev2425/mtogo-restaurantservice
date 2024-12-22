@@ -9,7 +9,7 @@ const createMenuSchema = z.object({
     .string()
     .min(1, 'Please enter a valid description')
     .max(255, 'Description is too long'),
-  price: z.number().int().min(1, 'Please enter a valid price'),
+  price: z.number().positive().int().min(1, 'Please enter a valid price'),
 });
 
 export { createMenuSchema };
