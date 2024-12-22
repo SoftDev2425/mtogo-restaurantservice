@@ -162,19 +162,19 @@ async function handleUpdateCategory(req: CustomRequest, res: Response) {
 }
 
 async function handleDeleteCategory(req: CustomRequest, res: Response) {
-  try {
-    const { categoryId } = req.params;
-
-    if (!isCuid(categoryId)) {
-      return res.status(400).json({ message: 'Invalid categoryId format.' });
-    }
-
-    await deleteCategory(categoryId, req.userId as string);
-
-    return successResponse(res, 200, 'Category deleted successfully', {});
-  } catch (error) {
-    handleError(error, res);
-  }
+  return controllerWorkflow<{}, {}>(req, res, {
+    validateParams: params => {
+      if (!isCuid(params.categoryId)) {
+        throw new Error('Invalid categoryId format.');
+      }
+    },
+    serviceCall: async () => {
+      await deleteCategory(req.params.categoryId, req.userId as string);
+      return {}; // No data to return in the response body
+    },
+    successMessage: 'Category deleted successfully',
+    successStatusCode: 200,
+  });
 }
 
 async function handleCreateMenu(req: CustomRequest, res: Response) {
