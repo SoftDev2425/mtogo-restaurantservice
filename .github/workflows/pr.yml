@@ -35,9 +35,9 @@ jobs:
       - name: Run Prettier Check
         run: npm run prettier
 
-      # # Step 4 - Running linter
-      # - name: Run Linter
-      #   run: npm run lint
+      # Step 4 - Running linter
+      - name: Run Linter
+        run: npm run lint
 
       # Step 5 - Running tests
       - name: Run Tests
