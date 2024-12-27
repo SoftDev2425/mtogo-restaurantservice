@@ -151,21 +151,37 @@ async function handleDeleteCategory(req: CustomRequest, res: Response) {
 async function handleCreateMenu(req: CustomRequest, res: Response) {
   return controllerWorkflow<
     { title: string; description?: string; price: number },
-    { menu: { id: string; title: string; description?: string; price: number; createdAt: Date }}
+    {
+      menu: {
+        id: string;
+        title: string;
+        description?: string;
+        price: number;
+        createdAt: Date;
+      };
+    }
   >(req, res, {
-    validateParams: (params) => {
+    validateParams: params => {
       if (!isCuid(params.categoryId)) {
         throw new Error('Invalid categoryId format.');
       }
     },
     validateSchema: createMenuSchema.parse,
-    sanitize: (data) => ({
+    sanitize: data => ({
       title: sanitizeInput(data.title),
-      description: data.description ? sanitizeInput(data.description) : undefined,
+      description: data.description
+        ? sanitizeInput(data.description)
+        : undefined,
       price: data.price,
     }),
-    serviceCall: async (data) => {
-      const menu = await createMenu(data.title, data.price, req.params.categoryId, req.userId as string, data.description);
+    serviceCall: async data => {
+      const menu = await createMenu(
+        data.title,
+        data.price,
+        req.params.categoryId,
+        req.userId as string,
+        data.description,
+      );
 
       if (!menu) {
         throw new Error('Menu creation failed.');
@@ -178,7 +194,7 @@ async function handleCreateMenu(req: CustomRequest, res: Response) {
           description: menu.description ?? undefined,
           price: menu.price,
           createdAt: menu.createdAt,
-        }
+        },
       };
     },
     successMessage: 'Menu created successfully',
@@ -189,9 +205,15 @@ async function handleCreateMenu(req: CustomRequest, res: Response) {
 async function handleGetMenusByCategory(req: CustomRequest, res: Response) {
   return controllerWorkflow<
     object, // Input type (no body for GET requests)
-    { id: string; title: string; description?: string; price: number; createdAt: Date }[]
+    {
+      id: string;
+      title: string;
+      description?: string;
+      price: number;
+      createdAt: Date;
+    }[]
   >(req, res, {
-    validateParams: (params) => {
+    validateParams: params => {
       if (!isCuid(params.categoryId)) {
         throw new Error('Invalid categoryId format.');
       }
@@ -203,7 +225,7 @@ async function handleGetMenusByCategory(req: CustomRequest, res: Response) {
         throw new Error('Menus not found.');
       }
 
-      return menus.map((menu) => ({
+      return menus.map(menu => ({
         id: menu.id,
         title: menu.title,
         description: menu.description ?? undefined,
@@ -219,20 +241,30 @@ async function handleGetMenusByCategory(req: CustomRequest, res: Response) {
 async function handleUpdateMenu(req: CustomRequest, res: Response) {
   return controllerWorkflow<
     { title?: string; description?: string; price?: number },
-    { menu: { id: string; title: string; description?: string; price: number; createdAt: Date }}
+    {
+      menu: {
+        id: string;
+        title: string;
+        description?: string;
+        price: number;
+        createdAt: Date;
+      };
+    }
   >(req, res, {
-    validateParams: (params) => {
+    validateParams: params => {
       if (!isCuid(params.menuId)) {
         throw new Error('Invalid menuId format.');
       }
     },
     validateSchema: updateMenuSchema.parse,
-    sanitize: (data) => ({
+    sanitize: data => ({
       title: data.title ? sanitizeInput(data.title) : undefined,
-      description: data.description ? sanitizeInput(data.description) : undefined,
+      description: data.description
+        ? sanitizeInput(data.description)
+        : undefined,
       price: data.price,
     }),
-    serviceCall: async (data) => {
+    serviceCall: async data => {
       const menu = await updateMenu(
         req.params.menuId,
         req.userId as string,
@@ -252,7 +284,7 @@ async function handleUpdateMenu(req: CustomRequest, res: Response) {
           description: menu.description ?? undefined,
           price: menu.price,
           createdAt: menu.createdAt,
-        }
+        },
       };
     },
     successMessage: 'Menu updated successfully',
@@ -266,19 +298,21 @@ async function handleGetCategoriesByRestaurantId(
 ) {
   return controllerWorkflow<
     object, // Input type (no body for GET requests)
-    {categories: { title: string; description: string; sortOrder: number }[]}
+    { categories: { title: string; description: string; sortOrder: number }[] }
   >(req, res, {
-    validateParams: (params) => {
+    validateParams: params => {
       if (!isCuid(params.restaurantId)) {
         throw new Error('Invalid restaurantId format.');
       }
     },
-    
+
     serviceCall: async () => {
-      const categories = await getCategoriesByRestaurantId(req.params.restaurantId);
+      const categories = await getCategoriesByRestaurantId(
+        req.params.restaurantId,
+      );
 
       return {
-        categories: categories.map((category) => ({
+        categories: categories.map(category => ({
           title: category.title,
           description: category.description ?? '',
           sortOrder: category.sortOrder,
@@ -292,7 +326,7 @@ async function handleGetCategoriesByRestaurantId(
 
 async function handleDeleteMenu(req: CustomRequest, res: Response) {
   return controllerWorkflow<object, object>(req, res, {
-    validateParams: (params) => {
+    validateParams: params => {
       if (!isCuid(params.menuId)) {
         throw new Error('Invalid menuId format.');
       }
@@ -308,7 +342,7 @@ async function handleDeleteMenu(req: CustomRequest, res: Response) {
 
 async function handleGetCategoryById(req: Request, res: Response) {
   return controllerWorkflow<object, { category: object }>(req, res, {
-    validateParams: (params) => {
+    validateParams: params => {
       if (!isCuid(params.categoryId)) {
         throw new Error('Invalid categoryId format.');
       }
@@ -329,7 +363,7 @@ async function handleGetCategoryById(req: Request, res: Response) {
 
 async function handleGetMenuById(req: CustomRequest, res: Response) {
   return controllerWorkflow<object, { menu: object }>(req, res, {
-    validateParams: (params) => {
+    validateParams: params => {
       if (!isCuid(params.menuId)) {
         throw new Error('Invalid menuId format.');
       }
@@ -353,7 +387,7 @@ async function handleGetRestaurantDetailsByRestaurantId(
   res: Response,
 ) {
   return controllerWorkflow<object, { restaurant: object }>(req, res, {
-    validateParams: (params) => {
+    validateParams: params => {
       if (!isCuid(params.restaurantId)) {
         throw new Error('Invalid restaurantId format.');
       }

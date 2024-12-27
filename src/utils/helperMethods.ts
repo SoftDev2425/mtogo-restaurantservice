@@ -49,7 +49,7 @@ export const createTestBasket = async () => {
       id: 'basketId',
       customerId: 'customer-user-id',
       restaurantId: 'restaurant-user-id',
-      note: faker.word.words(5)
-    }
-  })
-}
+      note: faker.word.words(5),
+    },
+  });
+};
