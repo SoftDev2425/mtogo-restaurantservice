@@ -1,4 +1,4 @@
-import { Express, Request, Response } from 'express';
+import { Express, NextFunction, Request, Response } from 'express';
 import RestaurantRouter from './routes/restaurant.routes';
 import SearchRouter from './routes/search.routes';
 import BasketRouter from './routes/basket.routes';
@@ -20,7 +20,7 @@ function routes(app: Express) {
   app.use('/api/basket', BasketRouter);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  app.use((err: unknown, req: Request, res: Response) => {
+  app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
     const { method, originalUrl, ip } = req;
 
     if (err instanceof Error) {
