@@ -1,33 +1,121 @@
+import CategoryBuilder from '../model/category';
 import prisma from '../../prisma/client';
 import { Prisma } from '@prisma/client';
+import sanitizeHtml from 'sanitize-html';
+import PrismaQueryFactory from '../factories/PrismaQueryFactory';
+import {
+  DefaultErrorHandler,
+  DuplicateKeyErrorHandler,
+  ErrorHandlerStrategy,
+} from '../strategies/ErrorHandlerStrategy';
+
+const DUPLICATE_KEY_ERROR = 'P2002';
+
+/** Utility Functions */
+async function calculateSortOrder(restaurantId: string) {
+  return prisma.categories.count({ where: { restaurantId } });
+}
+
+function handlePrismaError(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    const errorHandler = getErrorHandlerStrategy(error.code);
+    errorHandler.handle(error);
+  } else {
+    new DefaultErrorHandler().handle(error);
+  }
+}
+
+function getErrorHandlerStrategy(code: string): ErrorHandlerStrategy {
+  const strategies: { [key: string]: ErrorHandlerStrategy } = {
+    [DUPLICATE_KEY_ERROR]: new DuplicateKeyErrorHandler(),
+  };
+
+  return strategies[code] || new DefaultErrorHandler();
+}
+
+async function fetchCategory(categoryId: string, restaurantId: string) {
+  const category = await prisma.categories.findUnique({
+    where: { id: categoryId },
+  });
+  if (!category || category.restaurantId !== restaurantId) {
+    throw new Error('Category not found or does not belong to the restaurant.');
+  }
+  return category;
+}
+
+async function fetchMenu(menuId: string, restaurantId: string) {
+  const menu = await prisma.menus.findUnique({
+    where: { id: menuId },
+    select: { category: { select: { restaurantId: true } } },
+  });
+  if (!menu || menu.category.restaurantId !== restaurantId) {
+    throw new Error('Menu not found or does not belong to the restaurant.');
+  }
+  return menu;
+}
 
 /**
- *
- * @param title
- * @param description
- * @param restaurantId
- * @returns created category
+ * Handles sortOrder adjustment within a transaction
  */
-async function createCategory(
-  title: string,
-  description: string,
+async function adjustSortOrder(
+  transactionClient: Prisma.TransactionClient,
   restaurantId: string,
+  currentSortOrder: number,
+  newSortOrder: number,
 ) {
-  try {
-    // calculate sortOrder
-    const categoryCount = await prisma.categories.count({
+  if (newSortOrder > currentSortOrder) {
+    // Decrement sortOrder for categories between current and new position
+    await transactionClient.categories.updateMany({
       where: {
         restaurantId,
+        sortOrder: { gt: currentSortOrder, lte: newSortOrder },
       },
+      data: { sortOrder: { decrement: 1 } },
     });
+  } else if (newSortOrder < currentSortOrder) {
+    // Increment sortOrder for categories between new and current position
+    await transactionClient.categories.updateMany({
+      where: {
+        restaurantId,
+        sortOrder: { gte: newSortOrder, lt: currentSortOrder },
+      },
+      data: { sortOrder: { increment: 1 } },
+    });
+  }
+}
+
+/** Category Management */
+async function createCategory(
+  title: string,
+  restaurantId: string,
+  description?: string,
+) {
+  if (!title || !restaurantId) {
+    throw new Error('Title and restaurant ID are required.');
+  }
+
+  // Default undefined description to an empty string and sanitize
+  description = sanitizeHtml((description ?? '').trim(), {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
+
+  title = sanitizeHtml(title.trim(), {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
+
+  try {
+    const sortOrder = await calculateSortOrder(restaurantId);
+    const categoryData = new CategoryBuilder()
+      .setTitle(title)
+      .setDescription(description)
+      .setRestaurantId(restaurantId)
+      .setSortOrder(sortOrder)
+      .build();
 
     return await prisma.categories.create({
-      data: {
-        title,
-        description: description || '',
-        restaurantId,
-        sortOrder: categoryCount,
-      },
+      data: categoryData,
       select: {
         id: true,
         title: true,
@@ -39,89 +127,66 @@ async function createCategory(
       },
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (
-        error.code === 'P2002' &&
-        (error.meta?.target as string[])?.includes('title')
-      ) {
-        throw new Error('A category with this title already exists.');
-      }
-    }
-    throw error;
+    handlePrismaError(error);
   }
 }
 
-/**
- *
- * @returns all categories
- */
-
 async function updateCategory(
   categoryId: string,
-  title: string,
-  description: string,
-  sortOrder: number,
   restaurantId: string,
+  title?: string,
+  description?: string,
+  sortOrder?: number,
 ) {
-  try {
-    // validate sortOrder
-    const category = await prisma.categories.findUnique({
-      where: {
-        id: categoryId,
-      },
-      select: {
-        restaurantId: true,
-        sortOrder: true,
-      },
+  if (!categoryId || !restaurantId) {
+    throw new Error('Category ID and restaurant ID are required.');
+  }
+
+  // Sanitize inputs
+  if (title)
+    title = sanitizeHtml(title.trim(), {
+      allowedTags: [],
+      allowedAttributes: {},
+    });
+  if (description)
+    description = sanitizeHtml(description.trim(), {
+      allowedTags: [],
+      allowedAttributes: {},
     });
 
-    if (!category || category.restaurantId !== restaurantId) {
-      throw new Error('Category not found');
+  const existingCategory = await fetchCategory(categoryId, restaurantId);
+
+  if (title && title !== existingCategory.title) {
+    const duplicateCategory = await prisma.categories.findFirst({
+      where: { title, restaurantId, NOT: { id: categoryId } },
+    });
+    if (duplicateCategory) {
+      throw new Error('A category with this title already exists.');
     }
+  }
 
-    // Handle sortOrder update if it has changed
-    if (sortOrder !== category.sortOrder) {
-      // const categoryCount = await prisma.categories.count({
-      //   where: { restaurantId },
-      // });
-
-      // if (sortOrder < 0 || sortOrder >= categoryCount) {
-      //   throw new Error('Invalid sortOrder');
-      // }
-
-      // Adjust sortOrder for other categories
-      await prisma.$transaction(async prisma => {
-        if (sortOrder > category.sortOrder) {
-          // Decrement sortOrder for categories between current and new position
-          await prisma.categories.updateMany({
-            where: {
-              restaurantId,
-              sortOrder: { gt: category.sortOrder, lte: sortOrder },
-            },
-            data: { sortOrder: { decrement: 1 } },
-          });
-        } else if (sortOrder < category.sortOrder) {
-          // Increment sortOrder for categories between new and current position
-          await prisma.categories.updateMany({
-            where: {
-              restaurantId,
-              sortOrder: { gte: sortOrder, lt: category.sortOrder },
-            },
-            data: { sortOrder: { increment: 1 } },
-          });
-        }
+  try {
+    if (sortOrder !== undefined && sortOrder !== existingCategory.sortOrder) {
+      await prisma.$transaction(async tx => {
+        await adjustSortOrder(
+          tx,
+          restaurantId,
+          existingCategory.sortOrder,
+          sortOrder,
+        );
       });
     }
 
+    const categoryData = new CategoryBuilder()
+      .setTitle(title ?? existingCategory.title) // Preserve existing title if not provided
+      .setDescription(description ?? existingCategory.description) // Preserve existing description
+      .setSortOrder(sortOrder ?? existingCategory.sortOrder) // Preserve existing sortOrder
+      .setRestaurantId(restaurantId)
+      .build();
+
     return await prisma.categories.update({
-      where: {
-        id: categoryId,
-      },
-      data: {
-        title,
-        description,
-        sortOrder,
-      },
+      where: { id: categoryId },
+      data: categoryData,
       select: {
         id: true,
         title: true,
@@ -132,120 +197,69 @@ async function updateCategory(
       },
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (
-        error.code === 'P2002' &&
-        (error.meta?.target as string[])?.includes('title')
-      ) {
-        throw new Error('A category with this title already exists.');
-      }
-    }
-    throw error;
+    handlePrismaError(error);
   }
 }
 
-/**
- *
- * @param categoryId
- * @param restaurantId
- */
 async function deleteCategory(categoryId: string, restaurantId: string) {
-  const category = await prisma.categories.findUnique({
-    where: {
-      id: categoryId,
-    },
-  });
-
-  if (!category || category.restaurantId !== restaurantId) {
-    throw new Error('Category not found');
-  }
-
-  await prisma.categories.delete({
-    where: {
-      id: categoryId,
-    },
-  });
+  const category = await fetchCategory(categoryId, restaurantId);
+  await prisma.categories.delete({ where: { id: category.id } });
 }
 
+/** Menu Management */
 async function createMenu(
   title: string,
-  description: string,
   price: number,
   categoryId: string,
   restaurantId: string,
+  description?: string,
 ) {
-  try {
-    const category = await prisma.categories.findUnique({
-      where: {
-        id: categoryId,
-      },
+  const category = await fetchCategory(categoryId, restaurantId);
+
+  // Sanitize inputs
+  title = sanitizeHtml(title.trim(), {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
+
+  if (description) {
+    description = sanitizeHtml(description.trim(), {
+      allowedTags: [],
+      allowedAttributes: {},
     });
+  }
 
-    if (!category || category.restaurantId !== restaurantId) {
-      throw new Error('Category not found');
-    }
+  if (price <= 0) {
+    throw new Error('Price must be a positive number.');
+  }
 
+  try {
     return await prisma.menus.create({
       data: {
         title,
         description,
         price,
-        category: {
-          connect: {
-            id: categoryId,
-          },
-        },
+        category: { connect: { id: category.id } },
       },
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (
-        error.code === 'P2002' &&
-        (error.meta?.target as string[])?.includes('title')
-      ) {
-        throw new Error('A menu with this title already exists.');
-      }
-    }
-    throw error;
+    handlePrismaError(error);
   }
 }
 
 async function updateMenu(
   menuId: string,
-  title: string,
-  description: string,
-  price: number,
   restaurantId: string,
+  title?: string,
+  description?: string,
+  price?: number,
 ) {
+  await fetchMenu(menuId, restaurantId);
+
   try {
-    // validate sortOrder
-    const menu = await prisma.menus.findUnique({
-      where: {
-        id: menuId,
-      },
-      select: {
-        category: {
-          select: {
-            id: true,
-            restaurantId: true,
-          },
-        },
-      },
-    });
-
-    if (!menu || menu.category.restaurantId !== restaurantId) {
-      throw new Error('Menu not found.');
-    }
-
     return await prisma.menus.update({
-      where: {
-        id: menuId,
-      },
-      data: {
-        title,
-        description,
-        price,
-      },
+      where: { id: menuId },
+      data: { title, description, price },
       select: {
         id: true,
         title: true,
@@ -256,137 +270,30 @@ async function updateMenu(
       },
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (
-        error.code === 'P2002' &&
-        (error.meta?.target as string[])?.includes('title')
-      ) {
-        throw new Error('A menu with this title already exists.');
-      }
-    }
-    throw error;
+    handlePrismaError(error);
   }
 }
 
 async function deleteMenu(menuId: string, restaurantId: string) {
-  try {
-    const menu = await prisma.menus.findUnique({
-      where: {
-        id: menuId,
-      },
-      select: {
-        category: {
-          select: {
-            id: true,
-            restaurantId: true,
-          },
-        },
-      },
-    });
-
-    if (!menu || menu.category.restaurantId !== restaurantId) {
-      throw new Error('Menu not found.');
-    }
-
-    // Delete the menu
-    await prisma.menus.delete({
-      where: {
-        id: menuId,
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
+  await fetchMenu(menuId, restaurantId);
+  await prisma.menus.delete({ where: { id: menuId } });
 }
 
+/** Query Functions */
 async function getMenusByCategoryId(categoryId: string) {
-  return await prisma.menus.findMany({
-    where: {
-      categoryId,
-    },
-  });
+  return PrismaQueryFactory.getMenusByCategoryId(categoryId);
 }
-
-// async function getNearbyRestaurants(city: string, zip: string) {
-//   // GET CITY AND ZIP X,Y
-//   // const { x, y } = await getCityAndZipCoordinates(city, zip);
-
-// }
 
 async function getCategoriesByRestaurantId(restaurantId: string) {
-  return await prisma.categories.findMany({
-    where: {
-      restaurantId,
-    },
-    orderBy: {
-      sortOrder: 'asc',
-    },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      restaurantId: true,
-      sortOrder: true,
-      createdAt: true,
-      menus: true,
-    },
-  });
+  return PrismaQueryFactory.getCategoriesByRestaurantId(restaurantId);
 }
 
-// async function getRestaurantDetailsByRestaurantId(restaurantId: string) {
-
-//   return await prisma.restaurants.findUnique({
-//     where: {
-//       id: restaurantId,
-//     },
-//     select: {
-//       id: true,
-//       name: true,
-//       email: true,
-//       phone: true,
-//       createdAt: true,
-//       address: true,
-//       Categories: {
-//         select: {
-//           id: true,
-//           title: true,
-//           description: true,
-//           sortOrder: true,
-//           createdAt: true,
-//           menus: {
-//             select: {
-//               id: true,
-//               title: true,
-//               description: true,
-//               price: true,
-//               sortOrder: true,
-//               createdAt: true,
-//             },
-//             orderBy: {
-//               sortOrder: 'asc',
-//             },
-//           },
-//         },
-//       },
-//     },
-//   });
-// }
-
 async function getCategoryById(categoryId: string) {
-  return await prisma.categories.findUnique({
-    where: {
-      id: categoryId,
-    },
-  });
+  return PrismaQueryFactory.getCategoryById(categoryId);
 }
 
 async function getMenuById(menuId: string) {
-  return await prisma.menus.findUnique({
-    where: {
-      id: menuId,
-    },
-  });
+  return PrismaQueryFactory.getMenuById(menuId);
 }
 
 async function getRestaurantDetailsByRestaurantId(restaurantId: string) {
@@ -410,15 +317,25 @@ async function getRestaurantDetailsByRestaurantId(restaurantId: string) {
     };
   };
 
+  // Sanitize external API response
+  const sanitizedRestaurant = {
+    id: sanitizeHtml(restaurant.restaurant.id),
+    name: sanitizeHtml(restaurant.restaurant.name),
+    email: sanitizeHtml(restaurant.restaurant.email),
+    phone: sanitizeHtml(restaurant.restaurant.phone),
+    createdAt: restaurant.restaurant.createdAt, // Date field doesn't require sanitization
+    address: {
+      street: sanitizeHtml(restaurant.restaurant.address.street),
+      city: sanitizeHtml(restaurant.restaurant.address.city),
+      state: sanitizeHtml(restaurant.restaurant.address.state),
+      zip: sanitizeHtml(restaurant.restaurant.address.zip),
+    },
+  };
+
   const categories = await getCategoriesByRestaurantId(restaurantId);
 
   return {
-    id: restaurant.restaurant.id,
-    name: restaurant.restaurant.name,
-    email: restaurant.restaurant.email,
-    phone: restaurant.restaurant.phone,
-    createdAt: restaurant.restaurant.createdAt,
-    address: restaurant.restaurant.address,
+    ...sanitizedRestaurant,
     categories,
   };
 }

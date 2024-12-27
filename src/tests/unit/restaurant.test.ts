@@ -35,8 +35,8 @@ describe('createCategory', () => {
     // Act
     const newCategory = await createCategory(
       mockCategory.title,
-      mockCategory.description,
       mockCategory.restaurantId,
+      mockCategory.description,
     );
 
     // Assert
@@ -85,8 +85,8 @@ describe('createCategory', () => {
     // Act
     const newCategory = await createCategory(
       mockCategory.title,
-      mockCategory.description,
       mockCategory.restaurantId,
+      mockCategory.description,
     );
 
     // Assert
@@ -144,10 +144,10 @@ describe('createCategory', () => {
     await expect(
       createCategory(
         mockCategory.title,
-        mockCategory.description,
         mockCategory.restaurantId,
+        mockCategory.description,
       ),
-    ).rejects.toThrow('A category with this title already exists.');
+    ).rejects.toThrow('Could not complete operation: title already exists.');
     expect(prisma.categories.count).toHaveBeenCalledWith({
       where: {
         restaurantId: mockCategory.restaurantId,
@@ -171,16 +171,18 @@ describe('createCategory', () => {
     prisma.categories.count = jest.fn().mockResolvedValue(1); // 1 existing category
     prisma.categories.create = jest
       .fn()
-      .mockRejectedValue(new Error('Unknown error'));
+      .mockRejectedValue(
+        new Error('An unexpected error occured while creating the category.'),
+      );
 
     // Act and Assert
     await expect(
       createCategory(
         mockCategory.title,
-        mockCategory.description,
         mockCategory.restaurantId,
+        mockCategory.description,
       ),
-    ).rejects.toThrow('Unknown error');
+    ).rejects.toThrow('An unexpected error occurred.');
     expect(prisma.categories.count).toHaveBeenCalledWith({
       where: {
         restaurantId: mockCategory.restaurantId,
@@ -221,10 +223,10 @@ describe('updateCategory', () => {
     // Act
     const newCategory = await updateCategory(
       mockCategory.id,
+      mockCategory.restaurantId,
       updatedCategory.title,
       updatedCategory.description,
       updatedCategory.sortOrder,
-      mockCategory.restaurantId,
     );
 
     // Assert
@@ -232,10 +234,6 @@ describe('updateCategory', () => {
     expect(prisma.categories.findUnique).toHaveBeenCalledWith({
       where: {
         id: mockCategory.id,
-      },
-      select: {
-        restaurantId: true,
-        sortOrder: true,
       },
     });
     expect(prisma.categories.update).toHaveBeenCalledTimes(1);
@@ -247,6 +245,7 @@ describe('updateCategory', () => {
         title: updatedCategory.title,
         description: updatedCategory.description,
         sortOrder: updatedCategory.sortOrder,
+        restaurantId: mockCategory.restaurantId,
       },
       select: {
         id: true,
@@ -295,12 +294,12 @@ describe('updateCategory', () => {
     await expect(
       updateCategory(
         mockCategory.id,
+        mockCategory.restaurantId,
         updatedCategory.title,
         updatedCategory.description,
         updatedCategory.sortOrder,
-        mockCategory.restaurantId,
       ),
-    ).rejects.toThrow('A category with this title already exists.');
+    ).rejects.toThrow('Could not complete operation: title already exists.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.categories.update).toHaveBeenCalledTimes(1);
   });
@@ -331,12 +330,14 @@ describe('updateCategory', () => {
     await expect(
       updateCategory(
         mockCategory.id,
+        mockCategory.restaurantId,
         updatedCategory.title,
         updatedCategory.description,
         updatedCategory.sortOrder,
-        mockCategory.restaurantId,
       ),
-    ).rejects.toThrow('Category not found');
+    ).rejects.toThrow(
+      'Category not found or does not belong to the restaurant.',
+    );
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
   });
 
@@ -363,18 +364,20 @@ describe('updateCategory', () => {
     prisma.categories.findUnique = jest.fn().mockResolvedValue(mockCategory);
     prisma.categories.update = jest
       .fn()
-      .mockRejectedValue(new Error('Unknown error'));
+      .mockRejectedValue(
+        new Error('An unexpected error occured while updating the category.'),
+      );
 
     // Act and Assert
     await expect(
       updateCategory(
         mockCategory.id,
+        mockCategory.restaurantId,
         updatedCategory.title,
         updatedCategory.description,
         updatedCategory.sortOrder,
-        mockCategory.restaurantId,
       ),
-    ).rejects.toThrow('Unknown error');
+    ).rejects.toThrow('An unexpected error occurred.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.categories.update).toHaveBeenCalledTimes(1);
   });
@@ -405,10 +408,10 @@ describe('updateCategory', () => {
     // Act
     const newCategory = await updateCategory(
       mockCategory.id,
+      mockCategory.restaurantId,
       updatedCategory.title,
       updatedCategory.description,
       updatedCategory.sortOrder,
-      mockCategory.restaurantId,
     );
 
     // Assert
@@ -416,10 +419,6 @@ describe('updateCategory', () => {
     expect(prisma.categories.findUnique).toHaveBeenCalledWith({
       where: {
         id: mockCategory.id,
-      },
-      select: {
-        restaurantId: true,
-        sortOrder: true,
       },
     });
     expect(prisma.categories.update).toHaveBeenCalledTimes(1);
@@ -431,6 +430,7 @@ describe('updateCategory', () => {
         title: updatedCategory.title,
         description: updatedCategory.description,
         sortOrder: updatedCategory.sortOrder,
+        restaurantId: updatedCategory.restaurantId,
       },
       select: {
         id: true,
@@ -577,10 +577,10 @@ describe('createMenu', () => {
     // Act
     const newMenu = await createMenu(
       mockMenu.title,
-      mockMenu.description,
       mockMenu.price,
       mockCategory.id,
       mockCategory.restaurantId,
+      mockMenu.description,
     );
 
     // Assert
@@ -635,10 +635,10 @@ describe('createMenu', () => {
     await expect(
       createMenu(
         mockMenu.title,
-        mockMenu.description,
         mockMenu.price,
         mockCategory.id,
         mockCategory.restaurantId,
+        mockMenu.description,
       ),
     ).rejects.toThrow('Category not found');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
@@ -676,10 +676,10 @@ describe('createMenu', () => {
     await expect(
       createMenu(
         mockMenu.title,
-        mockMenu.description,
         mockMenu.price,
         mockCategory.id,
         mockCategory.restaurantId,
+        mockMenu.description,
       ),
     ).rejects.toThrow('Category not found');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
@@ -716,10 +716,10 @@ describe('createMenu', () => {
     await expect(
       createMenu(
         mockMenu.title,
-        mockMenu.description,
         mockMenu.price,
         mockCategory.id,
         mockCategory.restaurantId,
+        mockMenu.description,
       ),
     ).rejects.toThrow('Unknown error');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
@@ -762,12 +762,12 @@ describe('createMenu', () => {
     await expect(
       createMenu(
         mockMenu.title,
-        mockMenu.description,
         mockMenu.price,
         mockCategory.id,
         mockCategory.restaurantId,
+        mockMenu.description,
       ),
-    ).rejects.toThrow('A menu with this title already exists.');
+    ).rejects.toThrow('Could not complete operation: title already exists.');
     expect(prisma.categories.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.menus.create).toHaveBeenCalledTimes(1);
   });
@@ -799,10 +799,10 @@ describe('updateMenu', () => {
 
     const updatedMenu = await updateMenu(
       mockMenu.id,
+      'restaurant1',
       'Updated Menu',
       'Updated Description',
       120,
-      'restaurant1',
     );
 
     expect(updatedMenu).toMatchObject({
@@ -821,12 +821,12 @@ describe('updateMenu', () => {
     await expect(
       updateMenu(
         'menu1',
+        'restaurant1',
         'Updated Menu',
         'Updated Description',
         120,
-        'restaurant1',
       ),
-    ).rejects.toThrow('Menu not found.');
+    ).rejects.toThrow('Menu not found or does not belong to the restaurant.');
 
     expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
   });
@@ -847,12 +847,12 @@ describe('updateMenu', () => {
     await expect(
       updateMenu(
         'menu1',
+        'restaurant1',
         'Updated Menu',
         'Updated Description',
         120,
-        'restaurant1',
       ),
-    ).rejects.toThrow('Menu not found.');
+    ).rejects.toThrow('Menu not found or does not belong to the restaurant.');
 
     expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
   });
@@ -883,10 +883,10 @@ describe('updateMenu', () => {
 
     const updatedMenu = await updateMenu(
       mockMenu.id,
+      'restaurant1',
       'Original Menu',
       'Original Description',
       100,
-      'restaurant1',
     );
 
     expect(updatedMenu).toMatchObject({
@@ -927,12 +927,12 @@ describe('updateMenu', () => {
     await expect(
       updateMenu(
         'menu1',
+        'restaurant1',
         'Original Menu',
         'Original Description',
         100,
-        'restaurant1',
       ),
-    ).rejects.toThrow('A menu with this title already exists.');
+    ).rejects.toThrow('Could not complete operation: title already exists.');
 
     expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.menus.update).toHaveBeenCalledTimes(1);
@@ -961,7 +961,6 @@ describe('deleteMenu', () => {
       select: {
         category: {
           select: {
-            id: true,
             restaurantId: true,
           },
         },
@@ -978,7 +977,7 @@ describe('deleteMenu', () => {
     prisma.menus.findUnique = jest.fn().mockResolvedValue(null);
 
     await expect(deleteMenu('menu1', 'restaurant1')).rejects.toThrow(
-      'Menu not found.',
+      'Menu not found or does not belong to the restaurant.',
     );
 
     expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
@@ -994,7 +993,7 @@ describe('deleteMenu', () => {
     });
 
     await expect(deleteMenu('menu1', 'restaurant1')).rejects.toThrow(
-      'Menu not found.',
+      'Menu not found or does not belong to the restaurant.',
     );
 
     expect(prisma.menus.findUnique).toHaveBeenCalledTimes(1);
@@ -1148,5 +1147,3 @@ describe('getCategoriesByRestaurantId', () => {
     expect(prisma.categories.findMany).toHaveBeenCalledTimes(1);
   });
 });
-
-// describe('getNearbyRestaurants', () => {});

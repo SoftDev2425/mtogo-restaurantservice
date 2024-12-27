@@ -2,6 +2,7 @@ import supertest from 'supertest';
 import { app } from '../setup/setup';
 import { createTestCategory, setTestHeaders } from '../../utils/helperMethods';
 import prisma from '../../../prisma/client';
+import { faker } from '@faker-js/faker';
 
 describe('Restaurant create category', () => {
   it('should create a new category for a restaurant', async () => {
@@ -176,7 +177,8 @@ describe('Restaurant create category', () => {
       .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'A category with this title already exists.',
+      message:
+        'Could not complete operation: restaurantId, title already exists.',
     });
   });
 
@@ -436,14 +438,16 @@ describe('Restaurant update category', () => {
       .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'Category not found',
+      message: 'Category not found or does not belong to the restaurant.',
     });
   });
 
   it('should handle optional description and edge cases', async () => {
+    const restaurantUserID = 'c' + faker.string.alpha(24);
+
     const testHeaders = setTestHeaders({
       role: 'RESTAURANT',
-      userId: 'restaurant-user-id',
+      userId: restaurantUserID,
     });
 
     // Pre-create a category
@@ -451,7 +455,7 @@ describe('Restaurant update category', () => {
       data: {
         title: 'Sides',
         description: 'Accompaniments',
-        restaurantId: 'restaurant-user-id',
+        restaurantId: restaurantUserID,
         sortOrder: 1,
       },
     });
@@ -491,7 +495,7 @@ describe('Restaurant update category', () => {
       .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'Category not found',
+      message: 'Unexpected error.',
     });
   });
 });
@@ -559,7 +563,7 @@ describe('Restaurant delete category', () => {
       .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'Category not found',
+      message: 'Category not found or does not belong to the restaurant.',
     });
   });
 
@@ -575,7 +579,7 @@ describe('Restaurant delete category', () => {
       .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'Category not found',
+      message: 'Invalid categoryId format.',
     });
   });
 
@@ -585,13 +589,15 @@ describe('Restaurant delete category', () => {
       userId: 'restaurant-user-id',
     });
 
+    const testNonExistingCategoryId = 'c' + faker.string.alpha(24);
+
     const response = await supertest(app)
-      .delete('/api/restaurants/categories/invalid-id')
+      .delete(`/api/restaurants/categories/${testNonExistingCategoryId}`)
       .set(testHeaders)
       .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'Category not found',
+      message: 'Category not found or does not belong to the restaurant.',
     });
   });
 
@@ -628,7 +634,7 @@ describe('Get categories by restaurant ID', () => {
     });
 
     // Pre-create categories for the restaurant
-    const restaurantId = 'restaurant-test-id';
+    const restaurantId = 'c' + faker.string.alpha(24);
     await prisma.categories.createMany({
       data: [
         {
@@ -673,8 +679,10 @@ describe('Get categories by restaurant ID', () => {
       userId: 'customer-user-id',
     });
 
+    const testRestaurantId = 'c' + faker.string.alpha(24);
+
     const response = await supertest(app)
-      .get('/api/restaurants/restaurant-id/categories')
+      .get(`/api/restaurants/${testRestaurantId}/categories`)
       .set(testHeaders)
       .expect(200);
 
@@ -780,6 +788,10 @@ describe('Create menu', () => {
         {
           field: 'description',
           message: 'Please enter a valid description',
+        },
+        {
+          field: 'price',
+          message: 'Number must be greater than 0',
         },
         {
           field: 'price',
@@ -962,6 +974,10 @@ describe('Update menu', () => {
         },
         {
           field: 'price',
+          message: 'Number must be greater than 0',
+        },
+        {
+          field: 'price',
           message: 'Please enter a valid price',
         },
       ],
@@ -1060,7 +1076,7 @@ describe('Delete menu', () => {
       .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'Menu not found.',
+      message: 'Invalid menuId format.',
     });
   });
 
@@ -1130,10 +1146,10 @@ describe('Get menu by id', () => {
     const response = await supertest(app)
       .get('/api/restaurants/menus/invalid-id')
       .set(testHeaders)
-      .expect(404);
+      .expect(400);
 
     expect(response.body).toMatchObject({
-      message: 'Menu not found.',
+      message: 'Invalid menuId format.',
     });
   });
 });

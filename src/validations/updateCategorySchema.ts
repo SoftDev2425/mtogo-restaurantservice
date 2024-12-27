@@ -11,7 +11,7 @@ const updateCategorySchema = z.object({
     .min(1, 'Please enter a valid description')
     .max(255, 'Description is too long')
     .optional(),
-  sortOrder: z.number().int().optional(),
+  sortOrder: z.number().int().nonnegative().optional(),
 });
 
 export { updateCategorySchema };

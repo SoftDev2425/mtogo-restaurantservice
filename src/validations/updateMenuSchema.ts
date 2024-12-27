@@ -11,7 +11,12 @@ const updateMenuSchema = z.object({
     .min(1, 'Please enter a valid description')
     .max(255, 'Description is too long')
     .optional(),
-  price: z.number().int().min(1, 'Please enter a valid price').optional(),
+  price: z
+    .number()
+    .positive()
+    .int()
+    .min(1, 'Please enter a valid price')
+    .optional(),
 });
 
 export { updateMenuSchema };

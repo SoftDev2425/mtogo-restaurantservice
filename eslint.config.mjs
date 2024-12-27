@@ -12,6 +12,7 @@ export default [
       eqeqeq: "off",
       "no-unused-vars": "error",
       "prefer-const": ["error", { ignoreReadBeforeAssign: true }],
+      "@typescript-eslint/no-empty-object-type": "off",
     },
   },
   pluginJs.configs.recommended,

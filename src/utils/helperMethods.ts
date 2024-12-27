@@ -42,3 +42,14 @@ export const createTestCategory = async () => {
     },
   });
 };
+
+export const createTestBasket = async () => {
+  return await prisma.basket.create({
+    data: {
+      id: 'basketId',
+      customerId: 'customer-user-id',
+      restaurantId: 'restaurant-user-id',
+      note: faker.word.words(5),
+    },
+  });
+};
