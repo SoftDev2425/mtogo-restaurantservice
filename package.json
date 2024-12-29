@@ -32,6 +32,7 @@
     "mtogo-proto-provider": "^1.0.9",
     "node-fetch": "^3.3.2",
     "pg": "^8.13.0",
+    "prom-client": "^15.1.3",
     "sanitize-html": "^2.14.0",
     "validator": "^13.12.0",
     "winston": "^3.17.0",
